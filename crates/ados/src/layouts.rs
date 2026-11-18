@@ -15,19 +15,22 @@ pub fn default_layout(name: &str, window: &mut Window, cx: &mut App) -> DockLayo
         |id, w: &mut Window, cx: &mut App| DockLayout::tabs().panel_view(create(id, w, cx), cx);
     let half_width = (window.viewport_size().width - px(96.)) / 2.;
     let half_height = (window.viewport_size().height - px(73.)) / 2.;
+    // A build without Browser or Terminal (Windows, for now) shows Tasks and Calendar there.
+    let web = if cfg!(feature = "browser") { "browser" } else { "tasks" };
+    let shell = if cfg!(feature = "terminal") { "terminal" } else { "calendar" };
     match name {
         "Code" => {
             let notes = tab("notes", window, cx);
-            let terminal = tab("terminal", window, cx);
+            let terminal = tab(shell, window, cx);
             DockLayout::h_split()
                 .child(terminal, Some(half_width))
                 .child(notes, Some(half_width))
         }
         "Focus" => tab("notes", window, cx),
         _ => {
-            let browser = tab("browser", window, cx);
+            let browser = tab(web, window, cx);
             let notes = tab("notes", window, cx);
-            let terminal = tab("terminal", window, cx);
+            let terminal = tab(shell, window, cx);
             let right = DockLayout::v_split()
                 .child(notes, Some(half_height))
                 .child(terminal, Some(half_height));

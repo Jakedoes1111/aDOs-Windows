@@ -1,3 +1,5 @@
+// A window app on Windows: no console opens with it.
+#![cfg_attr(windows, windows_subsystem = "windows")]
 mod actions;
 mod keys;
 mod modules;

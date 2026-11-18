@@ -329,5 +329,6 @@ impl Render for PlaceholderPanel {
                 .size_8(),
             )
             .child(module.map(|m| m.title).unwrap_or(self.id))
+            .child(div().text_sm().child("Not in this build yet."))
     }
 }
