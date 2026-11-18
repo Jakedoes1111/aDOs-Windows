@@ -68,7 +68,8 @@ pub fn detect(input: &str) -> CaptureKind {
         return CaptureKind::Url;
     }
     let p = t.strip_prefix("file://").unwrap_or(t);
-    if one_line && (p.starts_with('/') || p.starts_with("~/")) {
+    // `is_absolute`: `/…` on Linux, `C:\…` on Windows.
+    if one_line && (Path::new(p).is_absolute() || p.starts_with("~/")) {
         let full = expand(p);
         if full.exists() {
             let ext = full.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
@@ -80,7 +81,7 @@ pub fn detect(input: &str) -> CaptureKind {
 
 fn expand(p: &str) -> PathBuf {
     match p.strip_prefix("~/") {
-        Some(rest) => PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join(rest),
+        Some(rest) => std::env::home_dir().unwrap_or_default().join(rest),
         None => PathBuf::from(p),
     }
 }
@@ -161,7 +162,9 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(&img, b"x").unwrap();
         assert_eq!(detect(img.to_str().unwrap()), CaptureKind::Image);
-        assert_eq!(detect("/etc/hostname"), CaptureKind::File);
+        let txt = dir.join("x.txt");
+        std::fs::write(&txt, b"x").unwrap();
+        assert_eq!(detect(txt.to_str().unwrap()), CaptureKind::File);
         assert!(save("   ").is_err());
         let c = save("buy milk\nand eggs").unwrap();
         let all = list();

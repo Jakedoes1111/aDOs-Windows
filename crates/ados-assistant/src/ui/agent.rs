@@ -23,7 +23,7 @@ pub(crate) enum Conn {
 pub(crate) type Then = Box<dyn FnOnce(&mut Assistant, SharedBackend, &mut Window, &mut Context<Assistant>)>;
 
 pub(super) fn home() -> PathBuf {
-    std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("/"))
+    std::env::home_dir().unwrap_or_else(|| PathBuf::from("/"))
 }
 
 impl Assistant {

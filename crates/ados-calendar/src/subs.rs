@@ -72,7 +72,7 @@ pub struct Loaded {
 
 fn expand_home(path: &str) -> PathBuf {
     match path.strip_prefix("~/") {
-        Some(rest) => PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join(rest),
+        Some(rest) => std::env::home_dir().unwrap_or_default().join(rest),
         None => PathBuf::from(path),
     }
 }

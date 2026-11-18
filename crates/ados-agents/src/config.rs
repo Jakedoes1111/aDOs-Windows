@@ -79,6 +79,10 @@ env = {}
 /// `$XDG_DATA_HOME/ados`, else `~/.local/share/ados`.
 pub fn ados_home() -> PathBuf {
     std::env::var_os("ADOS_HOME").map(PathBuf::from).unwrap_or_else(|| {
+        // Windows: %APPDATA% (user data, roams with the profile; docs/design/windows-port.md).
+        #[cfg(windows)]
+        let base = PathBuf::from(std::env::var_os("APPDATA").unwrap_or_default());
+        #[cfg(not(windows))]
         let base = std::env::var_os("XDG_DATA_HOME").map(PathBuf::from).unwrap_or_else(|| {
             PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join(".local/share")
         });
