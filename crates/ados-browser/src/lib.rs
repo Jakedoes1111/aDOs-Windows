@@ -1,5 +1,10 @@
-//! Real browser windows embedded as X11 children of the GPUI workspace.
+//! Real browser windows embedded as X11 children of the GPUI workspace (Linux), or WebView2
+//! pages in child windows of the aDOs window (Windows: `webview/`).
+// The X11 side still compiles on Windows; parts of it are unused there.
+#![cfg_attr(windows, allow(dead_code))]
+#[cfg(unix)]
 mod driver;
+#[cfg_attr(windows, path = "webview/engine.rs")]
 mod engine;
 mod engine_keys;
 mod nav;
@@ -7,6 +12,7 @@ mod focus;
 mod hints;
 mod page_hints;
 mod protocol;
+#[cfg_attr(windows, path = "webview/runtime.rs")]
 mod runtime;
 mod state;
 mod xembed;
@@ -27,6 +33,7 @@ mod tab_strip;
 // Tiled tabs and follower tabs: the model and the panel side.
 mod tiles;
 mod tile_view;
+#[cfg(unix)]
 mod follow;
 // Servo hands a page to Chromium by itself (owner's list, load failure).
 mod fallback;
@@ -198,6 +205,8 @@ impl BrowserPanel {
             .and_then(|handle| match handle.as_raw() {
                 RawWindowHandle::Xlib(h) => u32::try_from(h.window).ok(),
                 RawWindowHandle::Xcb(h) => Some(h.window.get()),
+                // Window handles fit in 32 bits on 64-bit Windows too.
+                RawWindowHandle::Win32(h) => u32::try_from(h.hwnd.get()).ok(),
                 _ => None,
             });
         let focus = cx.focus_handle();

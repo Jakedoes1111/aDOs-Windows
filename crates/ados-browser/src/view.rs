@@ -53,11 +53,12 @@ impl Render for BrowserPanel {
                     .child(div().flex_1().min_w_0().relative()
                         .child(Input::new(&self.input).small().w_full().tab_index(0))
                         .child(ados_core::hints::mark()))
-                    .child(marked(Button::new("browser-engine").tab_index(2).icon(IconName::Globe)
+                    // Windows has one engine (WebView2): no switch.
+                    .when(cfg!(unix), |row| row.child(marked(Button::new("browser-engine").tab_index(2).icon(IconName::Globe)
                         .when(!self.narrow, |button| button.label(self.state.engine.label()))
                         .ghost().h(px(32.))
                         .tooltip(format!("{}: switch to {}", self.state.engine.label(), self.state.engine.other().label()))
-                        .on_click(cx.listener(|this, _, window, cx| this.switch_engine(window, cx))))),
+                        .on_click(cx.listener(|this, _, window, cx| this.switch_engine(window, cx)))))),
             )
             .children(self.notice_line(cx))
             .children(self.comment_strip(cx))

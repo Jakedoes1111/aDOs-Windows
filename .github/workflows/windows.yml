@@ -18,8 +18,8 @@ jobs:
   windows:
     runs-on: windows-latest
     env:
-      # Modules ported so far. The Browser (WebView2) comes later: docs/design/windows-port.md.
-      FEATURES: notes,terminal,assistant,palette,calendar,sessions,tasks,mcp
+      # Every module (the Browser on WebView2): docs/design/windows-port.md.
+      FEATURES: notes,terminal,browser,assistant,palette,calendar,sessions,tasks,mcp
       # Static C runtime: ados.exe runs without the Visual C++ Redistributable.
       CARGO_BUILD_TARGET: x86_64-pc-windows-msvc
       CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: -C target-feature=+crt-static
@@ -72,6 +72,15 @@ jobs:
           (New-Object -ComObject WScript.Shell).SendKeys("echo ados-terminal-ok{ENTER}")
           Start-Sleep 3
           Shot "3-terminal"
+          # Browser: the Research layout has one, so WebView2 runs and draws the start page.
+          Start-Sleep 5
+          $edge = Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'"
+          if (-not $edge) { throw "no msedgewebview2.exe: the Browser did not start WebView2" }
+          "WebView2 processes: $(@($edge).Count)"
+          if (-not (Test-Path "$env:LOCALAPPDATA\ados\webview2")) { throw "no WebView2 profile in %LOCALAPPDATA%\ados\webview2" }
+          (New-Object -ComObject WScript.Shell).SendKeys("^4")
+          Start-Sleep 5
+          Shot "4-browser"
           # MCP: the bridge finds the running aDOs through current.json and lists its tools.
           $run = "$env:LOCALAPPDATA\ados\run"
           if (-not (Test-Path "$run\current.json")) { throw "no MCP current.json in $run" }
@@ -81,7 +90,7 @@ jobs:
           $out = Get-Content -Raw smoke/mcp-out.json
           Get-Content -Raw smoke/mcp-err.txt
           if ($out -notmatch '"notes_list"') { throw "MCP tools/list did not answer: $out" }
-          if ($out -match '"browser_open"') { throw "MCP lists browser tools in a build without the Browser" }
+          if ($out -notmatch '"browser_open"') { throw "MCP does not list the browser tools" }
           "MCP tools/list answered ($($out.Length) bytes)"
           if (-not (Test-Path "$env:APPDATA\ados")) { throw "no data folder at %APPDATA%\ados" }
           Get-ChildItem "$env:APPDATA\ados" | Format-Table Name
@@ -96,7 +105,7 @@ jobs:
         # building them together makes the linkers collide on one output file.
         run: |
           $failed = @()
-          foreach ($p in "ados-core", "ados-agents", "ados-notes", "ados-tasks", "ados-calendar", "ados-palette", "ados-sessions", "ados-assistant", "ados-terminal", "ados-mcp --no-default-features") {
+          foreach ($p in "ados-core", "ados-agents", "ados-notes", "ados-tasks", "ados-calendar", "ados-palette", "ados-sessions", "ados-assistant", "ados-terminal", "ados-mcp", "ados-browser") {
             $a = $p -split ' '
             cargo test --release --no-fail-fast -p @a
             if ($LASTEXITCODE -ne 0) { $failed += $p }

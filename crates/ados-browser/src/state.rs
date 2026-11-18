@@ -5,8 +5,10 @@ const SERVO_START: &str = "https://search.brave.com/";
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Engine {
-    #[default]
+    #[cfg_attr(not(windows), default)]
     Servo,
+    /// On Windows the one engine: WebView2 is Chromium.
+    #[cfg_attr(windows, default)]
     Chromium,
 }
 impl Engine {
@@ -74,10 +76,14 @@ impl Default for State {
 }
 impl State {
     pub fn load() -> Self {
-        std::fs::read(ados_core::paths::state_file("browser"))
+        #[allow(unused_mut)]
+        let mut state: Self = std::fs::read(ados_core::paths::state_file("browser"))
             .ok()
             .and_then(|s| serde_json::from_slice(&s).ok())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        #[cfg(windows)]
+        { state.engine = Engine::Chromium; }
+        state
     }
     pub fn save(&self) -> anyhow::Result<()> {
         let path = ados_core::paths::state_file("browser");

@@ -18,3 +18,9 @@ async-channel = "2"
 rustix = { version = "1", features = ["event", "process"] }
 base64 = "0.22"
 png = "0.18"
+
+# Windows: pages are WebView2 (src/webview/). webview2-com 0.39 uses the same `windows` 0.62
+# as GPUI and links the WebView2 loader statically: no DLL to ship.
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.39"
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_System_LibraryLoader", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging"] }

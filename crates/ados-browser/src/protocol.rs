@@ -17,7 +17,7 @@ pub struct Page {
     pub history: usize,
 }
 impl Page {
-    fn from_value(v: &Value) -> Self {
+    pub(crate) fn from_value(v: &Value) -> Self {
         Self {
             title: v["title"].as_str().unwrap_or_default().into(),
             url: v["url"].as_str().unwrap_or_default().into(),
@@ -32,7 +32,7 @@ impl Page {
         }
     }
 }
-const SNAPSHOT: &str = "JSON.stringify({title:document.title,url:location.href,text:(document.body?.innerText||'').slice(0,120000),loading:document.readyState!=='complete',history:history.length})";
+pub(crate) const SNAPSHOT: &str = "JSON.stringify({title:document.title,url:location.href,text:(document.body?.innerText||'').slice(0,120000),loading:document.readyState!=='complete',history:history.length})";
 
 /// Reply channel for one script evaluation: the result as text (JSON for non-strings).
 pub type Reply = async_channel::Sender<Result<String, String>>;
