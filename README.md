@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/logo/aDOs_512.png" alt="aDOs logo" width="160"></p>
+<p align="center"><img src="assets/logo/aDOs_readme.png" alt="aDOs logo" width="300"></p>
 
 # aDOs
 
