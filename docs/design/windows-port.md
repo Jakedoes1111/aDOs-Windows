@@ -107,6 +107,33 @@ Goal: `ados` type-checks for `x86_64-pc-windows-msvc` with Browser and Terminal 
 
 Results: see "Status" at the end.
 
+## Status
+
+### Step 1 (18 Nov 2026)
+
+Compiled on Linux (this machine, toolchain 1.99.1, debug `cargo check`, no linking):
+- `cargo check -p ados --target x86_64-pc-windows-msvc --no-default-features --features notes,assistant,palette,calendar,sessions,tasks`: passes, 9 warnings. The warnings are dead code that is only used with `browser`/`notes` on (`page_actions.rs`, `hints.rs:136`, `modules.rs:172`, `shell.rs:447`); Linux with default features has none. Left alone to keep shared files unchanged.
+- No C toolchain or Windows SDK was needed for the check: GPUI's `fxc.exe` shader step runs only in release builds on a Windows host.
+- `cargo check -p ados` (Linux, default features): passes, 0 warnings.
+
+Errors the excluded crates give for the Windows target today (`cargo check -p <crate> --target x86_64-pc-windows-msvc`, partial run):
+- ados-terminal, 4 errors: `pty.rs:166` `Pty::child()` is Unix-only in alacritty_terminal; `panel.rs:391,398,401` `os::unix` file modes.
+- ados-mcp: stops on its `ados-browser` dependency first (6 errors: `engine.rs:4,6,122` rustix process and `process_group`; `runtime.rs:13,400,515` `UnixStream` and timespec types). `x11rb` itself compiles for Windows. ados-mcp's own Unix-socket errors were not reached.
+- ados-browser: not checked on its own (stopped; same errors as above expected).
+
+CI (`.github/workflows/windows.yml`, `windows-latest`), first run 44281068275 on commit 4198af7:
+- **Release build of `ados.exe` with MSVC: green** (22 min cold; includes GPUI's `fxc.exe` shader step). Artifact `ados-windows-x64` (13.6 MB zip).
+- Tests (not gating): the first test binary passed 9 of 9. `ados-agents/tests/fake_agent.rs` then failed 7 of 8 because it looked for `examples/fake_agent` without `.exe`; cargo stopped there, so the other crates' tests did not run. Fixed with `EXE_SUFFIX`, and the workflow now uses `--no-fail-fast`; the next run shows the full test picture.
+- The `standalone` examples in several crates collide on one output name (cargo warning, not an error).
+
+Never run: any Windows binary, any test on Windows (CI runs them without gating), the UI on Windows.
+
+From now on compiles go to cloud sessions or CI, not the owner's laptop.
+
 ## Open questions for the owner
 
-See the end of this file, updated after each step.
+1. Windows 10 support: is Windows 11 only acceptable (WebView2 ships with it), or must Windows 10 work, with the Evergreen runtime installer?
+2. Data folder: `%APPDATA%\ados` (roams with the profile) or `%LOCALAPPDATA%\ados` (machine-local, better for large caches)? The plan assumes `%APPDATA%`.
+3. Terminal default shell: Windows PowerShell 5 (`powershell.exe`, always present) or PowerShell 7 (`pwsh.exe`) when installed?
+4. Floating cards over a page: Linux cuts a hole in the page; on Windows the first version hides the page while a card overlaps it. Acceptable for a first version?
+5. When will a Windows machine or VM exist for real UI checks?
