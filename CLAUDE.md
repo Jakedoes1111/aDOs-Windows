@@ -3,7 +3,7 @@
 This folder is the **native Windows port** of aDOs. Read `README.md`, `AGENTS.md`, `docs/SPEC.md`, `docs/VISION.md` and `docs/design/` first; they describe the app and its rules (design rules, "never guess an API", focus contract, shortcut registry). Where this file and `AGENTS.md` differ, this file wins here.
 
 ## Where things are
-- This repo: `~/Projects/ados-windows`, remote `origin` = github.com/Jakedoes1111/aDOs-Windows (private). Work and push here only.
+- This repo: `~/Projects/ados-windows`, remote `origin` = github.com/Jakedoes1111/aDOs-Windows (public). Work and push here only.
 - The Linux app: `~/Projects/aDOs`, GitHub Jakedoes1111/aDOs. **Never edit, build in, or push to it.** It is available here as the read-only remote `linux` (push is disabled on purpose): `git fetch linux` then merge `linux/main` to pick up Linux changes.
 - This repo started as a copy of the Linux repo's `main` at its first clean commit, so merges from `linux/main` work. Keep them working: do not reformat or move shared files without need; put Windows code behind `#[cfg(windows)]` or in new files so both systems build from the same tree. The long-term aim is that this port can be merged back, not a permanent fork.
 
@@ -30,7 +30,7 @@ The Browser keeps its GPUI chrome (tab strip, address bar, tiles, follower tabs)
 ## How to verify (this machine is Linux)
 - You cannot run a Windows binary here. Do not claim anything "works on Windows" from this machine.
 - Type-check for Windows locally where possible: `rustup target add x86_64-pc-windows-msvc` then `cargo check -p <crate> --target x86_64-pc-windows-msvc` (crates with C dependencies may need the MSVC SDK; `cargo-xwin` can supply it; find out, do not assume).
-- Real builds and tests: a GitHub Actions workflow on `windows-latest` in this repo (build, `cargo test`, upload the `.exe` as an artifact). The repo is private, so runner minutes are limited: build on push to `main` and on demand, not on every branch push.
+- Real builds and tests: a GitHub Actions workflow on `windows-latest` in this repo (build, `cargo test`, upload the `.exe` as an artifact). Build on push to `main` and on demand, not on every branch push, to keep runs short.
 - Real UI checks need a Windows machine or VM; the owner will say when one exists. Until then say exactly what was compiled and what was never run.
 - Linux must still pass: `cargo check -p ados` here after every shared-code change.
 

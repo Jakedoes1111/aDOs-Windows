@@ -1,6 +1,6 @@
 name: Build
 
-# Private repo, limited minutes: main and on demand only (`gh workflow run windows.yml --ref <branch>`).
+# Builds on main and on demand only (`gh workflow run windows.yml --ref <branch>`).
 on:
   push:
     branches: [main]
