@@ -2,11 +2,11 @@
 
 # aDOs for Windows
 
-> **This is the native Windows build of aDOs**: the same app as the Linux version, from the same source, ported to Windows 11. It is an early preview. Notes, Tasks, Calendar, Sessions, the assistant and the palette are in; the Terminal and the Browser are not yet. Start at [Install on Windows](#install-on-windows-preview). The rest of this page describes aDOs as a whole, and the Linux version where it says so.
+> **This is the native Windows build of aDOs**: the same app as the Linux version, from the same source, ported to Windows 11. It is an early preview that nobody has used on a real PC yet. Notes, Tasks, Calendar, Sessions, the assistant and the palette are in. The Terminal, the Browser and the agent tools (MCP) are Linux only for now. The **Windows** column in the table below shows what the Windows build has; start at [Install on Windows](#install-on-windows-preview).
 
 Thankyou Open Source Community
 
-A native desktop workspace for Linux, built in Rust on [GPUI](https://github.com/zed-industries/zed) (through `gpui-kit`) with an embedded [Servo](https://servo.org) browser.
+A native desktop workspace for Linux and Windows, built in Rust on [GPUI](https://github.com/zed-industries/zed) (through `gpui-kit`). On Linux it embeds a [Servo](https://servo.org) browser; on Windows the Browser will use WebView2.
 
 aDOs is one window where your work and your AI agents live together. Notes, a terminal, a browser, tasks and a calendar sit in a tiled workspace. Every agent session (pi, Claude Code, Codex) runs behind one interface, and an always-there assistant can see what you're working on and act inside the app.
 
@@ -14,23 +14,25 @@ Midnight-black, keyboard-first, icon-first. A personal project at v1.0: usable d
 
 ## What works today
 
-| Module | Key | What it does |
-|---|---|---|
-| Layouts | top bar | Panels split, tab, resize and move by drag. Named layouts (Research, Code, Focus), saved without asking. |
-| Command palette | Ctrl+K | Fuzzy search over every action in the app. |
-| Quick capture | Ctrl+Shift+K | Type or paste a thought, link, file or image; it lands in Notes → Inbox. |
-| Notes | Ctrl+2 | Markdown files with list, search, autosave and preview, plus the Inbox of captures. |
-| Terminal | Ctrl+3 | A real shell in a PTY: colours, scrollback, copy and paste, vim and htop work. History is restored after a restart. |
-| Browser | Ctrl+4 | Servo pages inside a panel: tabs, tiled tabs (side by side, stacked, grid) and follower tabs, popups opened as tabs, an address bar, back/forward and reload, keyboard into the page. Vimium-style `f`/`F` link hints. Switches to Chromium by itself for sites on a list (YouTube by default) or when Servo cannot load a page. |
-| Sessions | Ctrl+6 | Every agent session from every backend in one list. Replay, continue, and answer permission prompts. |
-| Tasks | Ctrl+7 | My Day and All views. Quick add understands `Pay rent fri #home`. Delete has Undo. |
-| Calendar | Ctrl+8 | Day, Week and Agenda views. Native events, plus read-only `.ics` subscriptions. |
-| Assistant | Alt+Space | A small card that chats with pi, Claude Code or Codex and knows what the active panel shows. |
-| Settings | Ctrl+Alt+, | Interface zoom (75 to 150 %), startup layout, the Browser's Chromium list. |
-| Shortcuts | Ctrl+, | Rebind any key. Conflicts are detected and resolved with Swap or Replace. Stored in `keymap.toml`. |
-| Hint mode | Ctrl+; | Keyboard hints across the whole app. |
+Linux has every module. The **Windows** column says what is in the Windows build: built and unit-tested there, not yet used by a person.
 
-Agents reach aDOs through a built-in **MCP server**: 27 tools covering actions, context, layouts, notes, capture, tasks, calendar, sessions and the browser. Every change an agent makes shows a toast with Undo.
+| Module | Key | What it does | Windows |
+|---|---|---|---|
+| Layouts | top bar | Panels split, tab, resize and move by drag. Named layouts (Research, Code, Focus), saved without asking. | Yes |
+| Command palette | Ctrl+K | Fuzzy search over every action in the app. | Yes |
+| Quick capture | Ctrl+Shift+K | Type or paste a thought, link, file or image; it lands in Notes → Inbox. | Yes |
+| Notes | Ctrl+2 | Markdown files with list, search, autosave and preview, plus the Inbox of captures. | Yes |
+| Terminal | Ctrl+3 | A real shell in a PTY: colours, scrollback, copy and paste, vim and htop work. History is restored after a restart. | Not yet |
+| Browser | Ctrl+4 | Servo pages inside a panel: tabs, tiled tabs (side by side, stacked, grid) and follower tabs, popups opened as tabs, an address bar, back/forward and reload, keyboard into the page. Vimium-style `f`/`F` link hints. Switches to Chromium by itself for sites on a list (YouTube by default) or when Servo cannot load a page. | Not yet. Links open in your default browser. |
+| Sessions | Ctrl+6 | Every agent session from every backend in one list. Replay, continue, and answer permission prompts. | Yes |
+| Tasks | Ctrl+7 | My Day and All views. Quick add understands `Pay rent fri #home`. Delete has Undo. | Yes |
+| Calendar | Ctrl+8 | Day, Week and Agenda views. Native events, plus read-only `.ics` subscriptions. | Yes |
+| Assistant | Alt+Space | A small card that chats with pi, Claude Code or Codex and knows what the active panel shows. | Yes |
+| Settings | Ctrl+Alt+, | Interface zoom (75 to 150 %), startup layout, the Browser's Chromium list. | Yes, without the Browser rows |
+| Shortcuts | Ctrl+, | Rebind any key. Conflicts are detected and resolved with Swap or Replace. Stored in `keymap.toml`. | Yes |
+| Hint mode | Ctrl+; | Keyboard hints across the whole app. | Yes, without page hints |
+
+On Linux, agents reach aDOs through a built-in **MCP server** (not in the Windows build yet; planned over a named pipe): 27 tools covering actions, context, layouts, notes, capture, tasks, calendar, sessions and the browser. Every change an agent makes shows a toast with Undo.
 
 ## Architecture
 
@@ -41,21 +43,21 @@ crates/
   ados-agents      agent backends over ACP (pi-acp, claude-agent-acp, codex-acp), shared and idle-stopped
   ados-assistant   the assistant card
   ados-sessions    Sessions module
-  ados-mcp         aDOs as MCP tools for agents (stdio bridge to a secret-gated Unix socket)
+  ados-mcp         aDOs as MCP tools for agents (stdio bridge to a secret-gated Unix socket; Linux only for now)
   ados-notes       Notes and Inbox
-  ados-terminal    Terminal
-  ados-browser     Browser (Servo child window; Chromium fallback)
+  ados-terminal    Terminal (Linux only for now; ConPTY planned)
+  ados-browser     Browser (Servo child window; Chromium fallback; Linux only, WebView2 planned)
   ados-palette     command palette and quick capture
   ados-tasks       Tasks
   ados-calendar    Calendar
-  ados-script      trial of hot-reloaded script panels (gpui-shell)
+  ados-script      trial of hot-reloaded script panels (gpui-shell; an example, not in the app)
 ```
 
-Agent backends are listed in `ADOS_HOME/backends.toml`. All data lives under `ADOS_HOME` (default `~/.local/share/ados`).
+Agent backends are listed in `ADOS_HOME/backends.toml`. All data lives under `ADOS_HOME` (default `~/.local/share/ados` on Linux, `%APPDATA%\ados` on Windows).
 
 ## Install
 
-aDOs runs on **Linux with X11**. A native **Windows 11** preview without the Terminal and Browser exists: see [Install on Windows](#install-on-windows-preview). There is no macOS build.
+aDOs runs on **Linux with X11**. A native **Windows 11** preview without the Terminal, Browser and agent tools exists: see [Install on Windows](#install-on-windows-preview). There is no macOS build.
 
 | Your system | How |
 |---|---|
@@ -67,6 +69,8 @@ aDOs runs on **Linux with X11**. A native **Windows 11** preview without the Ter
 | Windows 11 | The native preview below, or the full Linux app in WSL2 (it ships a Linux display, WSLg): `wsl --install -d Ubuntu-24.04`, then follow the Ubuntu steps inside it. |
 | Windows 10 | WSL2 as above; the native build is Windows 11 only for now. |
 | macOS | Use a Linux virtual machine (UTM or VirtualBox with Ubuntu 24.04, 8 GB of memory or more), then follow the Ubuntu steps inside it. |
+
+### Install on Linux
 
 Only Fedora and Ubuntu 24.04 have been built and run. The Arch list, WSL2 and a macOS virtual machine are untested: expect to fix small things, and the Browser is the part most likely to need them.
 
@@ -101,35 +105,53 @@ Only Fedora and Ubuntu 24.04 have been built and run. The Arch list, WSL2 and a 
    target/debug/ados                                   # your data in ~/.local/share/ados
    ADOS_HOME=$PWD/target/try target/debug/ados         # a throwaway data folder
    ```
-   A cold build takes about 6 minutes on 4 cores. `./run` builds and starts in one step.
+   A cold build takes about 6 minutes on 4 cores (Linux; the Windows CI build takes about 22). `./run` builds and starts in one step.
 
 ## Install on Windows (preview)
 
-A native Windows 11 (x64) build, made and started by GitHub Actions on every push to `main` (`.github/workflows/windows.yml`). Few people have run it on a real PC yet.
+A native Windows 11 (x64) build, made by GitHub Actions on pushes to `main` that change code, and on demand (`.github/workflows/windows.yml`). **Nobody has used it on a real PC yet.** What has been checked, on GitHub's Windows Server runner without a GPU:
+
+- the app starts and draws Home, and Ctrl+K opens the palette (screenshots in the run's `smoke-screenshots`);
+- a second launch hands off to the first and exits;
+- the data folder `%APPDATA%\ados` is created;
+- 153 unit tests in 8 crates pass (core, agents, notes, tasks, calendar, palette, sessions, assistant).
+
+Agents have only been run against a fake test agent, never pi, Claude Code or Codex.
 
 | Part | On Windows |
 |---|---|
 | Notes, Tasks, Calendar, Sessions, assistant, palette, capture, layouts, Settings, shortcuts | In the build |
 | Terminal | Not yet ("Not in this build yet."); planned on ConPTY, PowerShell 7 when installed, else Windows PowerShell |
-| Browser | Not yet; planned on WebView2 (part of Windows 11) |
+| Browser | Not yet; planned on WebView2 (part of Windows 11). Links open in your default browser meanwhile. |
 | Agent tools over MCP | Not yet; planned over a named pipe |
 
-1. Download the `aDOs-windows-x64` zip from a green run of the **Build** workflow (Actions tab, signed in to GitHub), or get it from someone who has. In your own fork, turn on Actions first (Actions tab) to build it there.
+1. Download the `aDOs-windows-x64` zip from a green run of the **Build** workflow (Actions tab, signed in to GitHub; each zip is kept 90 days), or get it from someone who has. In your own fork, turn on Actions first (Actions tab) to build it there.
 2. Unzip it anywhere and run `ados.exe`. The app is not signed yet: on "Windows protected your PC", choose More info, then Run anyway.
-3. Your data is in `%APPDATA%\ados` (`ADOS_HOME` overrides it). Agents need Node.js (`npx`) as on Linux.
+3. Your data is in `%APPDATA%\ados` (`ADOS_HOME` overrides it). Agents need what they need on Linux (see [Agents](#agents-optional)).
 
 The zip holds a `README.txt` with the same steps for someone who does not read this page.
+
+Known issues on Windows, from reading the code (none seen yet, nothing confirmed):
+
+- **Alt+Space** opens the assistant, but PowerToys Run uses the same chord by default. If it is taken, use Ctrl+5 or rebind it (Ctrl+,).
+- **Ctrl+Alt is AltGr** on many keyboard layouts, so Settings (Ctrl+Alt+,) may type a character instead. Rebind it if so.
+- A Calendar `.ics` refresh runs `curl`, which may flash a console window.
+- Stopping an agent started through `npx` may leave its `node` process running.
+- A start-up error shows nothing: the app has no console window.
 
 **Floating cards over web pages (when the Browser arrives).** A web page is a native window (Linux: an X11 child window; Windows: WebView2) that always draws on top of aDOs. When a floating card such as the assistant or a comment card opens over a page, aDOs cuts a card-shaped hole in the page window so the rest of the page stays visible and clicks in the hole reach the card. If the system cannot cut holes (an X server without the SHAPE extension; on Windows, if the window-region method fails on that PC), the page hides while the card is open and returns when it closes. Nothing is lost either way.
 
 Build it yourself on Windows: install Rust through rustup and the Visual Studio Build Tools (C++ workload, with the Windows SDK), then
 `cargo build -p ados --release --no-default-features --features notes,assistant,palette,calendar,sessions,tasks`.
+The app is `target\release\ados.exe`. To run it on a PC without the Visual C++ Redistributable, build with `RUSTFLAGS=-C target-feature=+crt-static` as CI does.
 
 ## Agents (optional)
 
-The app works without any agent; the assistant then says it cannot reach one. Backends speak the Agent Client Protocol and are listed in `ADOS_HOME/backends.toml` (format in `docs/design/backends.md`). The defaults expect Node with `npx` (the first use downloads the adapters from npm) and the agent you want already installed and signed in: pi (a terminal coding agent) through `pi-acp`, Claude Code through `claude-agent-acp`, Codex through `codex-acp`.
+The app works without any agent; the assistant then says it cannot reach one. Backends speak the Agent Client Protocol and are listed in `ADOS_HOME/backends.toml` (format in `docs/design/backends.md`). The defaults expect the agent you want already installed and signed in. pi (a terminal coding agent) and Codex start through Node's `npx`, which downloads their adapters (`pi-acp`, `codex-acp`) from npm on first use. Claude Code needs its adapter `claude-agent-acp` installed and on `PATH`. On Windows none of the real agents has been tried yet.
 
 ## Tests
+
+Linux:
 
 ```sh
 cargo test --workspace          # needs roughly 15 GB of memory for the first build
@@ -137,7 +159,13 @@ scripts/cloud-rig.sh up         # the app on a virtual display (Xvfb, xfwm4, xdo
 scripts/focus-matrix.sh enter leave click overlays   # Browser focus rules, see docs/design/focus-contract.md
 ```
 
-`scripts/rig.sh` is the same rig on `xspace`, the author's own virtual-display tool; use `cloud-rig.sh` if you do not have it. The browser engines' control ports listen on 127.0.0.1 without a password, which is fine on a single-user machine.
+Windows (the Terminal, Browser and MCP crates do not build there yet, and crates are tested one at a time because their `standalone` examples collide):
+
+```powershell
+foreach ($p in "ados-core","ados-agents","ados-notes","ados-tasks","ados-calendar","ados-palette","ados-sessions","ados-assistant") { cargo test --release -p $p }
+```
+
+`scripts/rig.sh` is the same rig on `xspace`, the author's own virtual-display tool; use `cloud-rig.sh` if you do not have it. On Linux the browser engines' control ports listen on 127.0.0.1 without a password, which is fine on a single-user machine.
 
 ## Docs
 
@@ -157,17 +185,17 @@ In the app, `Ctrl+,` lists every shortcut.
 |---|---|
 | 1. Agent backends (ACP) | Done |
 | 2. Sessions module | Done |
-| 3. Assistant tools over aDOs (MCP) | Done |
+| 3. Assistant tools over aDOs (MCP) | Done on Linux |
 | 4. Native memory and context engine | Design under discussion (`docs/design/decisions-2026-11-15.md`) |
 | 5. Tasks and Calendar | Done |
 | 6. Hot-reloaded UI layer the assistant can edit | Trial panel (`ados-script`); gpui-shell chosen for Home |
 | v1.0 | Signed off 15 Nov 2026 with 2 known bugs, 0 blockers |
-| Browser tabs, tiles, focus, Settings, Chromium switch | Done (16 to 18 Nov 2026) |
-| Windows port: shell, data folder, one window, agents | Preview (19 Nov 2026) |
+| Browser tabs, tiles, focus, Settings, Chromium switch | Done on Linux (16 to 18 Nov 2026) |
+| Windows port: shell, data folder, one window, agent start-up | Preview (19 Nov 2026), CI only, agents tried only against a fake agent |
 | Windows port: MCP, Terminal (ConPTY), Browser (WebView2), installer | Next, in that order (`docs/design/windows-port.md`) |
 
 ## Licence
 
 Licensed under either of the MIT licence (`LICENSE-MIT`) or the Apache Licence 2.0 (`LICENSE-APACHE`), at your option. Fork it and build what you like.
 
-The bundled Lucide icons are ISC (`crates/ados-browser/icons/LICENSE-LUCIDE`). Servo and Chromium are separate programs under their own licences.
+The bundled Lucide icons are ISC (`crates/ados-browser/icons/LICENSE-LUCIDE`). Servo and Chromium (used on Linux) and WebView2 (planned on Windows) are separate programs under their own licences.

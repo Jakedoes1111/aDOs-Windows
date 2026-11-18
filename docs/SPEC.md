@@ -1,6 +1,6 @@
 # aDOs v1 — spec
 
-> The v1 spec as written on 13 Nov 2026, kept for its design rules and module contracts. Where it differs from `README.md` and `VISION.md`, those are current: the assistant now talks to agent backends over ACP (not pi-mobile), Sessions, Tasks, Calendar, Settings and MCP exist, the module keys are Ctrl+1 to 8, and the Browser has tabs, tiles and an automatic Chromium switch.
+> The v1 spec as written on 13 Nov 2026, kept for its design rules and module contracts. Where it differs from `README.md` and `VISION.md`, those are current: the assistant now talks to agent backends over ACP (not pi-mobile), Sessions, Tasks, Calendar, Settings and MCP exist, the module keys are Ctrl+1 to 8, and the Browser has tabs, tiles and an automatic Chromium switch. Written for Linux; Windows differences are in `docs/design/windows-port.md`.
 
 One native window (Rust, GPUI through `gpui-kit` 0.9.1, Linux X11) for daily use.
 Feel: Zed-fast, midnight black, icon-first. Reference pictures: `docs/design/reference/07-midnight-refined.png`

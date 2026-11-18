@@ -1,6 +1,6 @@
 # aDOs — rules for every AI agent working in this repo
 
-aDOs is a native desktop workspace (Rust + GPUI via the `gpui-kit` crate). Read `README.md`, then `docs/SPEC.md` and `docs/VISION.md`.
+aDOs is a native desktop workspace (Rust + GPUI via the `gpui-kit` crate). Read `README.md`, then `docs/SPEC.md` and `docs/VISION.md`. Working on Windows? Read "Windows port" at the end first: some rules below are Linux-only.
 
 ## Hard rules
 1. **Stay in scope.** Edit only what the task names. Do not edit the workspace `Cargo.toml`, `.cargo/` or `docs/SPEC.md` unless the task says so. Need something from another crate? Say so in your final note.
@@ -38,3 +38,13 @@ Say what works, with the exact commands you ran and what you saw; what does not;
 - `cargo test --workspace` and parallel jobs are fine with 15 GB. A cold `cargo build -p ados` takes about 6 minutes on 4 cores.
 - If Servo cannot reach the internet there, browser tests use the local pages in `crates/ados-browser/fixtures/`, served at `http://127.0.0.1:8765/` by `cloud-rig.sh up`.
 - With no agent logins the assistant shows "Can't reach pi", which is expected.
+
+## Windows port
+This repo also builds a native Windows 11 app from the same source. Plan and status: `docs/design/windows-port.md`. Where the rules above say otherwise, these win on Windows:
+- **Build:** the Terminal, Browser and MCP crates do not build on Windows yet, so leave them out: `cargo build -p ados --release --no-default-features --features notes,assistant,palette,calendar,sessions,tasks`.
+- **Tests:** one crate per cargo call (the `standalone` examples collide at link time), only the ported crates; see `.github/workflows/windows.yml`.
+- **GUI:** there is no Windows virtual-display rig. The only UI check is CI's start-up job and its `smoke-screenshots` artifact. Never write that something works on Windows from a Linux machine.
+- **Data:** default `%APPDATA%\ados`; for tests set `$env:ADOS_HOME` (PowerShell) to a folder under `target\test-home\`.
+- **`unsafe`:** allowed for Win32 calls in Windows-only files (such as `crates/ados/src/single_windows.rs`), each with a `SAFETY:` comment.
+- **Versions to read:** `gpui-pre-windows-0.3.12` for GPUI's Windows platform and `windows-0.62` for Win32, both under `~/.cargo/registry/src/`.
+- **Shared code:** put Windows code behind `#[cfg(windows)]` or in new files, and keep Linux building (CI's `linux-check` job).

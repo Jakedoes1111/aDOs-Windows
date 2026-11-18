@@ -217,7 +217,9 @@ impl SettingsView {
         ];
         let _ = s;
         let query = self.search.read(cx).value().trim().to_lowercase();
-        all.into_iter().filter(|row| query.is_empty()
+        // Rows for modules left out of this build (Windows for now) would do nothing.
+        let built = |row: &Row| (cfg!(feature = "terminal") || row.group != "Terminal") && (cfg!(feature = "browser") || row.group != "Browser");
+        all.into_iter().filter(built).filter(|row| query.is_empty()
             || [row.group, row.label, row.id].iter().any(|t| t.to_lowercase().contains(&query))
             || row.desc.to_lowercase().contains(&query)).collect()
     }

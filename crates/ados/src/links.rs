@@ -35,6 +35,12 @@ impl Shell {
     }
     /// Show the Browser (switching to a layout that has one if this one does not) and load `text`.
     pub(crate) fn open_in_browser(&mut self, text: &str, window: &mut Window, cx: &mut Context<Self>) {
+        if !cfg!(feature = "browser") {
+            // No Browser in this build (Windows for now): links go to the system browser.
+            let t = text.trim();
+            let url = if t.contains("://") || t.contains(char::is_whitespace) { t.to_string() } else { format!("https://{t}") };
+            return ados_core::links::open_in_system_browser(&url, window, cx);
+        }
         if self.home {
             self.resume_layout(window, cx);
         }

@@ -35,4 +35,4 @@ This replaces the assumption v1 was built on. v1 treated pi-mobile as a backend.
 5. **Tasks and calendar modules.**
 6. **Hot-reloaded UI layer** the assistant can edit.
 
-Status on 18 Nov 2026: steps 1, 2, 3 and 5 are built. Step 4 is in design (`docs/design/decisions-2026-11-15.md`). Step 6 exists as a trial panel (`ados-script`).
+Status on 18 Nov 2026: steps 1, 2, 3 and 5 are built on Linux (Windows has 1, 2 and 5 so far: `docs/design/windows-port.md`). Step 4 is in design (`docs/design/decisions-2026-11-15.md`). Step 6 exists as a trial panel (`ados-script`).

@@ -11,7 +11,7 @@
   - Unquoted dotted ids (`notes.new = …`) and `Ctrl+Alt+N` spelling also work.
   - The file is applied at start and polled every 500 ms for changes; a change clears our bindings and binds again.
   - A bad entry is skipped and named in a toast. An unreadable file means defaults plus a toast. Startup never fails because of the keymap.
-- **Browser native grabs** follow the keymap:
+- **Browser native grabs** (Linux, X11) follow the keymap:
   - Every global, `AdosShell` or `BrowserPanel` shortcut is grabbed on the X child.
   - When the keymap changes, the browser panel sends the new list to the runtime (`HostMsg::Shortcuts`). `Embed::shortcuts` ungrabs the old keys and grabs the new ones.
   - Keys X cannot express are skipped. Before this change, one unsupported key stopped the browser from starting.

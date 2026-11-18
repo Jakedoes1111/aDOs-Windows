@@ -1,7 +1,7 @@
 # Windows port — plan and notes
 
-Native Windows 10/11 build of aDOs from the same tree as Linux. Rules and order: `CLAUDE.md`.
-Status lines say what was **compiled** and what was **run**; nothing here has run on Windows yet.
+Native Windows build of aDOs (Windows 11 now, Windows 10 later) from the same tree as Linux. Rules and order: `CLAUDE.md`.
+Status lines say what was **compiled** and what was **run**. Nothing has run on a real Windows PC; CI starts the app on GitHub's Windows Server runner. Latest truth: "Audit (19 Nov 2026)" at the end.
 
 Versions read for this plan (sources under `~/.cargo/registry/src/`, or downloaded from crates.io):
 gpui-kit 0.9.1 → gpui-pre 0.3.12 and gpui-pre-windows 0.3.12; alacritty_terminal 0.26.0;
@@ -11,14 +11,14 @@ raw-window-handle 0.6.2; webview2-com 0.39.1 and webview2-com-sys 0.39.1.
 
 | Crate | File | Linux-only call | Windows plan (step) |
 |---|---|---|---|
-| ados | `src/single.rs` | `os::linux::net::SocketAddrExt` abstract socket, `os::unix::net::UnixListener/UnixStream` | Step 1: `single_windows.rs` stub (no guard). Step 2: `File::try_lock` (portable) + a named pipe `\\.\pipe\ados-<hash>` for "raise" |
+| ados | `src/single.rs` | `os::linux::net::SocketAddrExt` abstract socket, `os::unix::net::UnixListener/UnixStream` | Done: `single_windows.rs`, a named pipe `\\.\pipe\ados-<hash>` is both the claim and the "raise" channel (no lock file) |
 | ados | `src/main.rs` | none; `WindowDecorations::Server` is fine on Windows | none |
-| ados-core | `src/paths.rs` `home()` | `$XDG_DATA_HOME`, `$HOME/.local/share` | Step 2: `%APPDATA%\ados` under `cfg(windows)`; `ADOS_HOME` still wins |
-| ados-core | `src/capture.rs:83` | `~/` expansion through `$HOME` | Step 2: `%USERPROFILE%` |
-| ados-agents | `src/config.rs:79` `ados_home()` | same rule as `paths::home` | Step 2: same change |
-| ados-agents | `src/config.rs:58,65` default `command = "npx"`, `src/launch.rs` `npx_spec` / `npx_caches` (`$HOME/.npm`) | Rust's `Command` on Windows does not find `npx.cmd` from `npx`; npm cache is `%LOCALAPPDATA%\npm-cache` | Step 2: `npx.cmd` on Windows, accept both names in `npx_spec`, add the Windows cache dir |
-| ados-assistant | `src/ui/agent.rs:26` | `$HOME` as working dir | Step 2: `%USERPROFILE%` |
-| ados-calendar | `src/subs.rs:75,91` | `$HOME`; runs `curl` | `curl.exe` ships with Windows 10 1803+; only the `$HOME` fix |
+| ados-core | `src/paths.rs` `home()` | `$XDG_DATA_HOME`, `$HOME/.local/share` | Done (step 2): `%APPDATA%\ados` under `cfg(windows)`; `ADOS_HOME` still wins |
+| ados-core | `src/capture.rs:83` | `~/` expansion through `$HOME` | Done (step 2): `%USERPROFILE%` |
+| ados-agents | `src/config.rs:79` `ados_home()` | same rule as `paths::home` | Done (step 2): same change |
+| ados-agents | `src/config.rs:58,65` default `command = "npx"`, `src/launch.rs` `npx_spec` / `npx_caches` (`$HOME/.npm`) | Rust's `Command` on Windows does not find `npx.cmd` from `npx`; npm cache is `%LOCALAPPDATA%\npm-cache` | Done (step 2): `npx.cmd` on Windows, accept both names in `npx_spec`, add the Windows cache dir |
+| ados-assistant | `src/ui/agent.rs:26` | `$HOME` as working dir | Done (step 2): `%USERPROFILE%` |
+| ados-calendar | `src/subs.rs:75,91` | `$HOME`; runs `curl` | `curl.exe` ships with Windows 10 1803+; Done: `$HOME` fix. Open: `curl` runs without `CREATE_NO_WINDOW`, so it may flash a console |
 | ados-mcp | `src/server.rs` | `UnixListener`, `PermissionsExt` 0700/0600, `OpenOptionsExt::mode`, `/proc/<pid>` liveness | Step 3: named pipe with a DACL for the current user only; keep the per-launch secret; pid liveness via `OpenProcess` |
 | ados-mcp | `src/bridge.rs` | `UnixStream::connect` | Step 3: open the named pipe |
 | ados-mcp | `Cargo.toml` | hard dependency on `ados-browser` (`browser_tools.rs`) | Step 3: optional `browser` feature, default on |
@@ -158,3 +158,34 @@ Goal: a zip someone else can unzip and run on Windows 11. Done in this round:
 
 Seen on the GitHub runner (run 44300389461, Windows Server image with the Windows 11 shell, 1024x768, no GPU): the window opens, draws the Home panel with the midnight theme, and Ctrl+K sent with `SendKeys` opens the palette. Screenshots are the `smoke-screenshots` artifact of each run. Second launch handed off. Never seen: a human using it, a real GPU, high DPI, multiple monitors, an agent session on Windows.
 
+
+## Audit (19 Nov 2026)
+
+Code and docs audited against run 44317203688 (commit 0054581, green: Windows build, smoke test, 153 tests; Linux `cargo check -p ados`). README, `docs/windows/README.txt`, AGENTS.md and CLAUDE.md now say which platform each claim is about.
+
+| Module | Windows build | Windows evidence |
+|---|---|---|
+| Home, layouts | in | smoke screenshot; the `ados` crate's own 9 tests are not run on Windows |
+| Palette | in | 6 tests (run twice, lib and harness); Ctrl+K screenshot, not asserted |
+| Quick capture, Notes, Inbox | in | core 24, notes 34 tests; UI never used |
+| Tasks, Calendar | in | 7 and 9 tests; `.ics` fetch never run |
+| Sessions, assistant | in | 15 and 28 tests; no real agent |
+| Agents (pi, Codex via npx; Claude via `claude-agent-acp`) | in | 24 tests against `fake_agent.exe` only |
+| Settings, shortcuts, hint mode | in | 8 shortcut and 6 hint tests; Settings UI never used |
+| Data folder, one-window guard | in | smoke: `%APPDATA%\ados` created; second launch exits 0 |
+| Terminal, Browser | placeholder ("Not in this build yet.") | not built |
+| MCP | absent | not built |
+| ados-script | not in the app on either system | not checked |
+
+Fixed in this round (compiled by CI only, not yet seen running):
+- Links (Notes Ctrl+O, Tasks and Calendar `o`, assistant links, palette URLs) went to a Browser that is not in the build and showed "No layout has a Browser". Without the `browser` feature they now open in the system browser (`crates/ados/src/links.rs`).
+- Settings hid nothing: the Terminal and Browser rows showed on Windows and did nothing. They are now left out when those features are off (`settings_ui.rs`).
+
+Open risks (from reading code, none seen):
+- Alt+Space (assistant) clashes with PowerToys Run; Ctrl+Alt chords are AltGr on many layouts (Settings `ctrl-alt-,`, the future Browser chords). The shortcut editor's OS-clash list (`ados-core/src/shortcuts/chord.rs`) has no Windows entries.
+- Stopping an agent kills only its direct child (ACP 5.2.0, no job object); through `npx.cmd` the `node` agent can outlive it.
+- `subs.rs` runs `curl` without `CREATE_NO_WINDOW`; `file:///C:/…` subscriptions and captures are not recognised as paths.
+- Settings' "open folder/file" buttons build `file://` + a Windows path; GPUI has `open_with_system`/`reveal_path` for that. Unverified.
+- `eprintln!` is invisible under `windows_subsystem` (guard "Busy", window open failure).
+- If `APPDATA` is unset the data folder becomes a relative `ados`.
+- Run 44300389461 cited above was red on its test step (the smoke step passed); 44317203688 is the first fully green run.

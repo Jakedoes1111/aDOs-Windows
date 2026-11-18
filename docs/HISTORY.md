@@ -19,5 +19,8 @@ aDOs was written in twelve days of November 2026, almost entirely by AI coding a
 - **One shortcut registry** (`design/shortcuts.md`); the page never wins over an aDOs chord.
 - **Agents talk ACP**, through third-party adapters, so a new agent is a line in `backends.toml`.
 
+## Windows port
+From 18 Nov 2026 this repo (aDOs-Windows) ports the same source to Windows 11: plan, status and audit in `docs/design/windows-port.md`.
+
 ## Where the old material is
 The per-round briefs, handoff notes, about 740 test screenshots, design explorations and the full git history before the cleanup are kept by the owner outside this repo (an archive folder with a git bundle of every branch). They are process records, not needed to build or extend the app.

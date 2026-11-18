@@ -1,6 +1,6 @@
 # The Browser focus contract (F1 to F10)
 
-Every change to the Browser keeps these rules. `scripts/focus-matrix.sh enter leave click overlays` checks them on a virtual display.
+Every change to the Browser keeps these rules. `scripts/focus-matrix.sh enter leave click overlays` checks them on a virtual display (Linux only). The rules apply on Windows too; the WebView2 mapping is in `windows-port.md` §2.
 
 F1. **One keyboard owner, and it is visible.** The module whose rail icon and tab are marked active is the one that receives the next key. Never two carets, never none.
 F2. **Entering the Browser** (Ctrl+number, rail, palette, tab click, layout switch, `browser_open`, a link opened from another module): focus goes to where it last was inside the Browser, page or address bar. First time: the page if one is loaded, the address bar if the page is blank.

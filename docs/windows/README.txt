@@ -2,16 +2,18 @@ aDOs for Windows (native build) - early preview
 ==============================================
 
 aDOs is one window for notes, tasks, a calendar and AI agent sessions, driven
-from the keyboard. This is an early build of the Windows port. It is built and
-started automatically on Windows (GitHub's windows-latest), but few people have
-used it on a real PC yet. Expect rough edges.
+from the keyboard. This is an early build of the Windows port. It has only
+been started automatically on GitHub's Windows Server test machine; nobody has
+used it on a real PC yet. Expect rough edges, and please report them.
 
 Needs
 -----
 - Windows 11, 64-bit (x64). Windows 10 is not supported yet.
 - Nothing else for the app itself: no installer, no runtime to add.
-- Optional, for the assistant and Sessions: Node.js (which provides npx) and an
-  agent you are already signed in to (pi, Claude Code or Codex).
+- Optional, for the assistant and Sessions: an agent you are already signed in
+  to. pi and Codex start through Node.js (npx). Claude Code needs its adapter,
+  claude-agent-acp, installed and on PATH. No real agent has been tried on
+  Windows yet.
 
 Start it
 --------
@@ -20,16 +22,22 @@ Start it
 3. Windows may say "Windows protected your PC" because the app is not signed
    yet. Click "More info", then "Run anyway". It asks only the first time.
 
-Starting ados.exe again while it runs brings the open window to the front.
+Starting ados.exe again while it runs should bring the open window to the
+front instead of opening a second one.
 
 What is in this build
 ---------------------
-Works: Notes (Ctrl+2), Sessions (Ctrl+6), Tasks (Ctrl+7), Calendar (Ctrl+8),
+In it: Notes (Ctrl+2), Sessions (Ctrl+6), Tasks (Ctrl+7), Calendar (Ctrl+8),
 the command palette (Ctrl+K), quick capture (Ctrl+Shift+K), the assistant
 (Alt+Space), layouts, Settings (Ctrl+Alt+,) and the shortcut editor (Ctrl+,).
 
 Not yet: the Terminal and the Browser show "Not in this build yet."
+Links open in your default web browser instead.
 Agents cannot use aDOs's own tools yet (the MCP connection).
+
+If a key does nothing: Alt+Space may be taken by PowerToys Run (use Ctrl+5),
+and Ctrl+Alt acts as AltGr on many keyboard layouts. Change any key with
+Ctrl+, (the shortcut editor).
 
 When the Browser arrives: web pages are drawn by Windows' own WebView2 in a
 separate layer that always sits on top of aDOs. When a floating card (the
