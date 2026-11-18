@@ -76,6 +76,8 @@ pub fn atomic_write(path: &Path, text: &str) -> Result<()> {
         file.write_all(text.as_bytes())?;
         file.sync_all()?;
         fs::rename(&temp, path)?;
+        // Windows cannot open a folder as a file; NTFS journals the rename itself.
+        #[cfg(unix)]
         fs::File::open(parent)?.sync_all()?;
         Ok(())
     })();
