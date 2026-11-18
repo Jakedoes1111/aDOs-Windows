@@ -33,4 +33,4 @@ jobs:
       - name: Test the ported crates
         # Not yet a gate: the tests were written on Linux and have never run on Windows.
         continue-on-error: true
-        run: cargo test --release -p ados-core -p ados-agents -p ados-notes -p ados-tasks -p ados-calendar -p ados-palette -p ados-sessions -p ados-assistant
+        run: cargo test --release --no-fail-fast -p ados-core -p ados-agents -p ados-notes -p ados-tasks -p ados-calendar -p ados-palette -p ados-sessions -p ados-assistant
