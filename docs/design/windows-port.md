@@ -139,7 +139,22 @@ From now on compiles go to cloud sessions or CI, not the owner's laptop.
 ## Owner decisions (18 Nov 2026)
 
 1. **Windows 11 only** for now; Windows 10 (Evergreen WebView2 installer) later.
-2. Data folder (proposed, awaiting a yes): user data in `%APPDATA%\ados` (what Linux keeps in `~/.local/share/ados`; Rust's `data_dir()` convention); the WebView2 profile and cache, the lock and the MCP pipe state in `%LOCALAPPDATA%\ados` (large or machine-only, must not roam). `ADOS_HOME` still overrides both.
+2. Data folder (approved): user data in `%APPDATA%\ados` (what Linux keeps in `~/.local/share/ados`; Rust's `data_dir()` convention); the WebView2 profile and cache and the MCP state in `%LOCALAPPDATA%\ados` when those arrive (the one-window guard needs no file on Windows) (large or machine-only, must not roam). `ADOS_HOME` still overrides both.
 3. Terminal shell: `pwsh.exe` (PowerShell 7) when on `PATH`, else `powershell.exe`.
-4. Floating cards over a page: try `SetWindowRgn` on a per-tab host HWND that holds the WebView2 (a window region clips painting and clicks of the window and its children, like X SHAPE). Fall back to hiding the page under a card, which Linux already does when SHAPE is missing.
+4. Floating cards over a page (approved, and explained to users in `README.md` and `docs/windows/README.txt`): try `SetWindowRgn` on a per-tab host HWND that holds the WebView2 (a window region clips painting and clicks of the window and its children, like X SHAPE). Fall back to hiding the page under a card, which Linux already does when SHAPE is missing.
 5. Windows for UI checks: not available in cloud Claude Code sessions (Linux). Plan: a UI smoke job on the GitHub `windows-latest` runner (launch `ados.exe`, screenshot, upload); a real Windows 11 machine or VM for interactive checks later.
+
+### Shareable shell (18 Nov 2026, branch `windows-shell`)
+
+Goal: a zip someone else can unzip and run on Windows 11. Done in this round:
+- Data folder `%APPDATA%\ados` (`ados-core/src/paths.rs`, `ados-agents/src/config.rs`); home folder through `std::env::home_dir()` everywhere it was `$HOME` (capture, calendar, assistant, sessions, npm cache).
+- Captured file paths: `detect` used `starts_with('/')`, so `C:\…` paths became thoughts; now `Path::is_absolute`.
+- Notes: `atomic_write` skips the folder fsync on Windows (it made every save report an error).
+- Agents: bare program names resolve on `PATH` as `.exe` then `.cmd` on Windows (`launch::program`), since npm installs `npx` and agent commands as `.cmd`; npm's Windows cache `%LOCALAPPDATA%\npm-cache` is searched.
+- One window per data folder: `crates/ados/src/single_windows.rs`, a named pipe `\\.\pipe\ados-<hash>` created with `FILE_FLAG_FIRST_PIPE_INSTANCE` (the claim) and `PIPE_REJECT_REMOTE_CLIENTS`; a second launch calls `AllowSetForegroundWindow(ASFW_ANY)` then asks the first to raise. Uses `unsafe` FFI (windows 0.62, read from source), which AGENTS.md rule 7 needs the port to allow.
+- `#![windows_subsystem = "windows"]`: no console window. Side effect: `eprintln!` messages are not seen by users on Windows; start-up failures need a message box later.
+- Placeholder modules say "Not in this build yet."; built-in layouts use Tasks and Calendar where Browser and Terminal would be when those features are off.
+- CI (`.github/workflows/windows.yml`, workflow "Build"): Windows build with a static C runtime (no VC++ Redistributable needed), zip artifact `aDOs-windows-x64` (`ados.exe` + `docs/windows/README.txt`), a smoke test that starts the app with the default data folder, takes screenshots, checks a second launch hands off with exit 0 and that `%APPDATA%\ados` exists, then the ported crates' tests (gating). A Linux job runs `cargo check -p ados` on Ubuntu 24.04.
+
+Seen on the GitHub runner (run 44300389461, Windows Server image with the Windows 11 shell, 1024x768, no GPU): the window opens, draws the Home panel with the midnight theme, and Ctrl+K sent with `SendKeys` opens the palette. Screenshots are the `smoke-screenshots` artifact of each run. Second launch handed off. Never seen: a human using it, a real GPU, high DPI, multiple monitors, an agent session on Windows.
+

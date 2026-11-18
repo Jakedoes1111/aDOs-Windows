@@ -72,7 +72,15 @@ jobs:
           name: smoke-screenshots
           path: smoke/
       - name: Test the ported crates
-        run: cargo test --release --no-fail-fast -p ados-core -p ados-agents -p ados-notes -p ados-tasks -p ados-calendar -p ados-palette -p ados-sessions -p ados-assistant
+        # One crate per cargo call: several crates have an example named `standalone`, and
+        # building them together makes the linkers collide on one output file.
+        run: |
+          $failed = @()
+          foreach ($p in "ados-core", "ados-agents", "ados-notes", "ados-tasks", "ados-calendar", "ados-palette", "ados-sessions", "ados-assistant") {
+            cargo test --release --no-fail-fast -p $p
+            if ($LASTEXITCODE -ne 0) { $failed += $p }
+          }
+          if ($failed) { throw "tests failed in: $($failed -join ', ')" }
 
   # Linux must keep building from the same tree.
   linux-check:
