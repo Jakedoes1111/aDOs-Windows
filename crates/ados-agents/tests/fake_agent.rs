@@ -129,7 +129,12 @@ fn killed_agent_yields_crash_event() {
         backend.prompt(&session, "pid").await.expect("prompt");
         let pid = text_of(&drain(&backend));
         assert!(pid.parse::<u32>().is_ok(), "pid reply: {pid}");
-        let status = std::process::Command::new("kill").args(["-9", &pid]).status().expect("kill");
+        let status = if cfg!(windows) {
+            std::process::Command::new("taskkill").args(["/F", "/PID", &pid]).status()
+        } else {
+            std::process::Command::new("kill").args(["-9", &pid]).status()
+        }
+        .expect("kill");
         assert!(status.success());
         let event = backend.events().recv().await.expect("event after kill");
         match event {

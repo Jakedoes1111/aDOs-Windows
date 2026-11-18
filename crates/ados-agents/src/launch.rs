@@ -37,7 +37,8 @@ pub fn resolve(config: &BackendConfig) -> Option<BackendConfig> {
 
 /// `npx -y pkg@ver a b` → (`pkg@ver`, [a, b]). Other npx flags: not handled, keep npx.
 fn npx_spec(config: &BackendConfig) -> Option<(String, Vec<String>)> {
-    let program = Path::new(&config.command).file_name()?.to_str()?;
+    // `file_stem`: Windows configs may say `npx.cmd`.
+    let program = Path::new(&config.command).file_stem()?.to_str()?;
     if program != "npx" {
         return None;
     }
@@ -61,14 +62,19 @@ fn sanitize(spec: &str) -> String {
     spec.chars().map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '-' { c } else { '_' }).collect()
 }
 
-/// npm's cache folders that may hold `_npx/`: `$npm_config_cache`, else `~/.npm`.
+/// npm's cache folders that may hold `_npx/`: `$npm_config_cache`, else `~/.npm`
+/// (Windows: `%LOCALAPPDATA%\npm-cache`).
 fn npx_caches() -> Vec<PathBuf> {
     let mut roots = vec![];
     if let Some(dir) = std::env::var_os("npm_config_cache") {
         roots.push(PathBuf::from(dir));
     }
-    if let Some(home) = std::env::var_os("HOME") {
-        roots.push(PathBuf::from(home).join(".npm"));
+    if let Some(home) = std::env::home_dir() {
+        roots.push(home.join(".npm"));
+    }
+    #[cfg(windows)]
+    if let Some(local) = std::env::var_os("LOCALAPPDATA") {
+        roots.push(PathBuf::from(local).join("npm-cache"));
     }
     roots
 }
@@ -112,9 +118,25 @@ fn runs_with_node(bin: &Path) -> bool {
     head.starts_with("#!") && head.lines().next().is_some_and(|l| l.contains("node"))
 }
 
+/// The program to start. Windows: npm installs `npx` and agent commands as `.cmd` files, and
+/// `Command` only appends `.exe` to a bare name, so a bare name is resolved on `PATH` here.
+pub fn program(command: &str) -> String {
+    if cfg!(windows) && !command.contains(['/', '\\']) {
+        if let Some(path) = which(command) {
+            return path.display().to_string();
+        }
+    }
+    command.to_string()
+}
+
 fn which(program: &str) -> Option<PathBuf> {
+    let names: Vec<String> = if cfg!(windows) && Path::new(program).extension().is_none() {
+        vec![format!("{program}.exe"), format!("{program}.cmd")]
+    } else {
+        vec![program.to_string()]
+    };
     std::env::split_paths(&std::env::var_os("PATH")?)
-        .map(|dir| dir.join(program))
+        .flat_map(|dir| names.iter().map(move |name| dir.join(name)))
         .find(|p| p.is_file())
 }
 

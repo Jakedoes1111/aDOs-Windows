@@ -123,7 +123,7 @@ impl Backend {
         on_event: Option<EventHook>,
     ) -> Result<Self> {
         let agent = AcpAgent::new(
-            AcpAgentConfig::new(&config.command)
+            AcpAgentConfig::new(crate::launch::program(&config.command))
                 .args(config.args.iter().cloned())
                 .envs(config.env.iter().map(|(k, v)| (k.clone(), v.clone()))),
         );
