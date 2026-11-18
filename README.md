@@ -1,6 +1,8 @@
 <p align="center"><img src="assets/logo/aDOs_readme.png" alt="aDOs logo" width="300"></p>
 
-# aDOs
+# aDOs for Windows
+
+> **This is the native Windows build of aDOs**: the same app as the Linux version, from the same source, ported to Windows 11. It is an early preview. Notes, Tasks, Calendar, Sessions, the assistant and the palette are in; the Terminal and the Browser are not yet. Start at [Install on Windows](#install-on-windows-preview). The rest of this page describes aDOs as a whole, and the Linux version where it says so.
 
 Thankyou Open Source Community
 
@@ -103,7 +105,7 @@ Only Fedora and Ubuntu 24.04 have been built and run. The Arch list, WSL2 and a 
 
 ## Install on Windows (preview)
 
-A native Windows 11 (x64) build, made and started on every push by GitHub Actions (`.github/workflows/windows.yml`). Few people have run it on a real PC yet.
+A native Windows 11 (x64) build, made and started by GitHub Actions on every push to `main` (`.github/workflows/windows.yml`). Few people have run it on a real PC yet.
 
 | Part | On Windows |
 |---|---|
@@ -112,7 +114,7 @@ A native Windows 11 (x64) build, made and started on every push by GitHub Action
 | Browser | Not yet; planned on WebView2 (part of Windows 11) |
 | Agent tools over MCP | Not yet; planned over a named pipe |
 
-1. Download the `aDOs-windows-x64` zip from a green run of the **Build** workflow (Actions tab), or get it from someone who has.
+1. Download the `aDOs-windows-x64` zip from a green run of the **Build** workflow (Actions tab, signed in to GitHub), or get it from someone who has. In your own fork, turn on Actions first (Actions tab) to build it there.
 2. Unzip it anywhere and run `ados.exe`. The app is not signed yet: on "Windows protected your PC", choose More info, then Run anyway.
 3. Your data is in `%APPDATA%\ados` (`ADOS_HOME` overrides it). Agents need Node.js (`npx`) as on Linux.
 
@@ -142,6 +144,8 @@ scripts/focus-matrix.sh enter leave click overlays   # Browser focus rules, see 
 - `docs/VISION.md`: where aDOs is going, and the build order.
 - `docs/SPEC.md`: the v1 spec and design rules.
 - `docs/design/`: design notes (agent backends and MCP, focus contract, shortcuts, script UI, decisions).
+- `docs/design/windows-port.md`: the Windows port plan, what is done and what is next.
+- `docs/windows/README.txt`: the read-me shipped in the Windows zip.
 - `docs/HISTORY.md`: how it was built, and where the old material went.
 - `AGENTS.md`: rules for AI agents working in this repo.
 
@@ -159,6 +163,8 @@ In the app, `Ctrl+,` lists every shortcut.
 | 6. Hot-reloaded UI layer the assistant can edit | Trial panel (`ados-script`); gpui-shell chosen for Home |
 | v1.0 | Signed off 15 Nov 2026 with 2 known bugs, 0 blockers |
 | Browser tabs, tiles, focus, Settings, Chromium switch | Done (16 to 18 Nov 2026) |
+| Windows port: shell, data folder, one window, agents | Preview (19 Nov 2026) |
+| Windows port: MCP, Terminal (ConPTY), Browser (WebView2), installer | Next, in that order (`docs/design/windows-port.md`) |
 
 ## Licence
 

@@ -1,5 +1,5 @@
-aDOs for Windows - early preview
-=================================
+aDOs for Windows (native build) - early preview
+==============================================
 
 aDOs is one window for notes, tasks, a calendar and AI agent sessions, driven
 from the keyboard. This is an early build of the Windows port. It is built and
