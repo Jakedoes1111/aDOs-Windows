@@ -166,7 +166,7 @@ impl TerminalPanel {
             Snapshot {
                 module: ids::TERMINAL.into(),
                 title: "Terminal".into(),
-                location: std::env::var("HOME").ok().map(Into::into),
+                location: std::env::home_dir().map(|h| h.display().to_string().into()),
                 text: text.clone().into(),
                 selection,
             },
@@ -386,19 +386,17 @@ impl Drop for TerminalPanel {
     }
 }
 fn save_history(path: &std::path::Path, text: &str) -> std::io::Result<()> {
-    use std::{
-        io::Write,
-        os::unix::fs::{OpenOptionsExt, PermissionsExt},
-    };
+    use std::io::Write;
     let temp = path.with_extension("tmp");
-    let mut file = std::fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .mode(0o600)
-        .open(&temp)?;
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
+    let mut file = options.open(&temp)?;
     // Terminal output can contain credentials. Also tighten pre-existing temp files.
-    file.set_permissions(std::fs::Permissions::from_mode(0o600))?;
+    // (Windows: the data folder is under the owner's profile, which only they can open.)
+    #[cfg(unix)]
+    file.set_permissions(<std::fs::Permissions as std::os::unix::fs::PermissionsExt>::from_mode(0o600))?;
     file.write_all(text.as_bytes())?;
     std::fs::rename(temp, path)
 }

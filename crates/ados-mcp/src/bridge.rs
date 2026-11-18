@@ -4,7 +4,10 @@
 //! Without the env (a client the owner configured by hand, e.g. pi through pi-mcp-adapter),
 //! it reads the running aDOs's `current.json` instead.
 use std::io::{Read, Write};
+#[cfg(unix)]
 use std::os::unix::net::UnixStream;
+#[cfg(windows)]
+use uds_windows::UnixStream;
 
 pub const SOCKET_ENV: &str = "ADOS_MCP_SOCKET";
 pub const SECRET_ENV: &str = "ADOS_MCP_SECRET";

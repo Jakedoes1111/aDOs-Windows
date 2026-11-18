@@ -47,8 +47,13 @@ pub const TOOLS: &[Tool] = &[
     Tool { name: "browser_screenshot", description: "Take a PNG of the Browser's page with the engine's own capture, save it under ADOS_HOME/cache and return its path.", params: &[], mutates: false, timeout: 30 },
 ];
 
+/// The tools this build offers: the `browser_*` ones only when the Browser is built.
+pub fn available() -> impl Iterator<Item = &'static Tool> {
+    TOOLS.iter().filter(|t| cfg!(feature = "browser") || !t.name.starts_with("browser_"))
+}
+
 pub fn find(name: &str) -> Option<&'static Tool> {
-    TOOLS.iter().find(|t| t.name == name)
+    available().find(|t| t.name == name)
 }
 
 /// The JSON Schema for a tool's arguments.
@@ -66,8 +71,7 @@ pub fn schema(tool: &Tool) -> Value {
 
 /// The `tools/list` result.
 pub fn list() -> Value {
-    let tools: Vec<Value> = TOOLS
-        .iter()
+    let tools: Vec<Value> = available()
         .map(|t| {
             json!({
                 "name": t.name,
@@ -125,7 +129,7 @@ mod tests {
             assert!(t.name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'), "{}", t.name);
             assert!(t.name.len() <= 64);
         }
-        assert_eq!(list()["tools"].as_array().map(Vec::len), Some(TOOLS.len()));
+        assert_eq!(list()["tools"].as_array().map(Vec::len), Some(available().count()));
     }
 
     #[test]

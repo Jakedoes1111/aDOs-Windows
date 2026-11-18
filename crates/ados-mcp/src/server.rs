@@ -1,9 +1,14 @@
-//! The socket side: a Unix socket only the owner can open, a per-launch secret, and one
+//! The socket side: a Unix socket only the owner can open (on Windows an AF_UNIX socket
+//! through `uds_windows`, in the owner's own profile folder), a per-launch secret, and one
 //! thread per connection. Tool calls go to the GPUI thread over a channel and are waited
 //! for with the tool's timeout, so an agent never hangs on aDOs.
 use std::io::{BufRead, BufReader, Read, Write};
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
+#[cfg(unix)]
 use std::os::unix::net::{UnixListener, UnixStream};
+#[cfg(windows)]
+use uds_windows::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
@@ -32,13 +37,31 @@ pub struct Listening {
 /// 32 random bytes as hex, from the kernel.
 pub fn new_secret() -> Result<String> {
     let mut bytes = [0u8; 32];
+    #[cfg(unix)]
     std::fs::File::open("/dev/urandom")
         .and_then(|mut f| f.read_exact(&mut bytes))
         .context("Could not read random bytes for the MCP secret")?;
+    #[cfg(windows)]
+    {
+        use windows::Win32::Security::Cryptography::{BCryptGenRandom, BCRYPT_USE_SYSTEM_PREFERRED_RNG};
+        // SAFETY: fills the buffer it is given; the status is checked.
+        let status = unsafe { BCryptGenRandom(None, &mut bytes, BCRYPT_USE_SYSTEM_PREFERRED_RNG) };
+        anyhow::ensure!(status.0 >= 0, "Could not get random bytes for the MCP secret (status {:#x})", status.0);
+    }
     Ok(bytes.iter().map(|b| format!("{b:02x}")).collect())
 }
 
 /// Where this run's socket lives: `$XDG_RUNTIME_DIR/ados`, else `ADOS_HOME/run`.
+/// Windows: `%LOCALAPPDATA%\ados\run` (machine-only state, never roams), unless `ADOS_HOME` is set.
+#[cfg(windows)]
+pub fn socket_dir() -> PathBuf {
+    match std::env::var_os("LOCALAPPDATA") {
+        Some(dir) if !dir.is_empty() && std::env::var_os("ADOS_HOME").is_none() => PathBuf::from(dir).join("ados").join("run"),
+        _ => ados_core::paths::home().join("run"),
+    }
+}
+
+#[cfg(unix)]
 pub fn socket_dir() -> PathBuf {
     match std::env::var_os("XDG_RUNTIME_DIR") {
         Some(dir) if !dir.is_empty() => PathBuf::from(dir).join("ados"),
@@ -50,11 +73,14 @@ pub fn socket_dir() -> PathBuf {
 pub fn listen(calls: async_channel::Sender<Call>) -> Result<Listening> {
     let dir = socket_dir();
     std::fs::create_dir_all(&dir).with_context(|| format!("Could not create {}", dir.display()))?;
+    // Windows: the folder is under the owner's profile, which only they (and admins) can open.
+    #[cfg(unix)]
     std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700))?;
     remove_stale(&dir);
     let socket = dir.join(format!("mcp-{}.sock", std::process::id()));
     let _ = std::fs::remove_file(&socket);
     let listener = UnixListener::bind(&socket).with_context(|| format!("Could not listen on {}", socket.display()))?;
+    #[cfg(unix)]
     std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600))?;
     let secret = new_secret()?;
     write_current(&dir, &socket, &secret)?;
@@ -80,9 +106,11 @@ fn write_current(dir: &Path, socket: &Path, secret: &str) -> Result<()> {
     let tmp = dir.join(format!("{CURRENT_FILE}.{}", std::process::id()));
     let body = serde_json::json!({ "socket": socket, "secret": secret, "pid": std::process::id() });
     {
-        use std::os::unix::fs::OpenOptionsExt;
-        let mut f = std::fs::OpenOptions::new().write(true).create(true).truncate(true).mode(0o600).open(&tmp)
-            .with_context(|| format!("Could not write {}", tmp.display()))?;
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create(true).truncate(true);
+        #[cfg(unix)]
+        std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
+        let mut f = options.open(&tmp).with_context(|| format!("Could not write {}", tmp.display()))?;
         f.write_all(body.to_string().as_bytes())?;
     }
     std::fs::rename(&tmp, &path).with_context(|| format!("Could not write {}", path.display()))?;
@@ -95,7 +123,7 @@ pub fn read_current() -> Result<(PathBuf, String), String> {
     let text = std::fs::read_to_string(&path).map_err(|_| format!("aDOs is not running (no {}).", path.display()))?;
     let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("{} is damaged: {e}", path.display()))?;
     let pid = v["pid"].as_u64().unwrap_or(0);
-    if !Path::new("/proc").join(pid.to_string()).exists() {
+    if !alive(pid) {
         return Err("aDOs is not running (its last run has ended).".into());
     }
     match (v["socket"].as_str(), v["secret"].as_str()) {
@@ -110,10 +138,31 @@ fn remove_stale(dir: &Path) {
         let name = entry.file_name().to_string_lossy().to_string();
         let pid = name.strip_prefix("mcp-").and_then(|n| n.strip_suffix(".sock"));
         if let Some(pid) = pid {
-            if !Path::new("/proc").join(pid).exists() {
+            if !pid.parse().is_ok_and(alive) {
                 let _ = std::fs::remove_file(entry.path());
             }
         }
+    }
+}
+
+/// Whether the aDOs run with this process id is still going.
+#[cfg(unix)]
+fn alive(pid: u64) -> bool {
+    Path::new("/proc").join(pid.to_string()).exists()
+}
+
+#[cfg(windows)]
+fn alive(pid: u64) -> bool {
+    use windows::Win32::Foundation::{CloseHandle, STILL_ACTIVE};
+    use windows::Win32::System::Threading::{GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+    let Ok(pid) = u32::try_from(pid) else { return false };
+    // SAFETY: plain Win32 calls; the handle is closed before returning.
+    unsafe {
+        let Ok(process) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) else { return false };
+        let mut code = 0u32;
+        let running = GetExitCodeProcess(process, &mut code).is_ok() && code == STILL_ACTIVE.0 as u32;
+        let _ = CloseHandle(process);
+        running
     }
 }
 

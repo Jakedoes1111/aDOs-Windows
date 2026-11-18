@@ -121,6 +121,6 @@ mod tests {
         let r = run("not json").expect("reply");
         assert_eq!(r["error"]["code"], -32700);
         let r = run(r#"{"jsonrpc":"2.0","id":6,"method":"tools/list"}"#).expect("reply");
-        assert!(r["result"]["tools"].as_array().is_some_and(|t| t.len() == tools::TOOLS.len()));
+        assert!(r["result"]["tools"].as_array().is_some_and(|t| t.len() == tools::available().count()));
     }
 }

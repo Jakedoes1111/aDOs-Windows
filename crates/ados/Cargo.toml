@@ -8,7 +8,7 @@ license.workspace = true
 default = ["notes", "terminal", "browser", "assistant", "palette", "calendar", "sessions", "tasks", "mcp"]
 notes = ["dep:ados-notes"]
 terminal = ["dep:ados-terminal"]
-browser = ["dep:ados-browser"]
+browser = ["dep:ados-browser", "ados-mcp?/browser"]
 assistant = ["dep:ados-assistant"]
 palette = ["dep:ados-palette"]
 calendar = ["dep:ados-calendar"]
@@ -26,7 +26,7 @@ ados-palette = { path = "../ados-palette", optional = true }
 ados-calendar = { path = "../ados-calendar", optional = true }
 ados-sessions = { path = "../ados-sessions", optional = true }
 ados-tasks = { path = "../ados-tasks", optional = true }
-ados-mcp = { path = "../ados-mcp", optional = true }
+ados-mcp = { path = "../ados-mcp", optional = true, default-features = false }
 ados-agents = { path = "../ados-agents" }
 gpui-kit.workspace = true
 anyhow.workspace = true

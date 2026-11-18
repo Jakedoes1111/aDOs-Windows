@@ -5,6 +5,7 @@
 //! - [`bridge::run`]: the stdio shim agents run (`ados mcp-bridge`).
 //! - [`protocol`] / [`tools`]: MCP JSON-RPC routing and the tool list (pure, tested).
 pub mod bridge;
+#[cfg(feature = "browser")]
 mod browser_tools;
 mod data_tools;
 pub mod host;

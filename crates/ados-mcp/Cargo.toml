@@ -14,10 +14,21 @@ ados-agents = { path = "../ados-agents" }
 ados-notes = { path = "../ados-notes" }
 ados-tasks = { path = "../ados-tasks" }
 ados-calendar = { path = "../ados-calendar" }
-ados-browser = { path = "../ados-browser" }
+ados-browser = { path = "../ados-browser", optional = true }
 anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 async-channel = "2"
 futures = "0.3"
 jiff = "0.2"
+
+[features]
+# The browser_* tools. Off where the Browser is not built (Windows, for now).
+default = ["browser"]
+browser = ["dep:ados-browser"]
+
+# Windows: AF_UNIX sockets (Windows 10 1803 and later) with the std-like API; already in the
+# tree through zbus. `windows` is the version GPUI uses.
+[target.'cfg(windows)'.dependencies]
+uds_windows = "1.2"
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Security_Cryptography", "Win32_System_Threading"] }

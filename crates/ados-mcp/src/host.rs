@@ -10,7 +10,9 @@ use serde_json::Value;
 
 use crate::protocol::ToolResult;
 use crate::server::{self, Call};
-use crate::{bridge, browser_tools, data_tools, session_tools, shell_tools};
+#[cfg(feature = "browser")]
+use crate::browser_tools;
+use crate::{bridge, data_tools, session_tools, shell_tools};
 
 /// What the shell tells the server about itself.
 pub struct Hooks {
@@ -77,6 +79,7 @@ async fn run_tool(tool: &str, args: Value, cx: &mut AsyncApp) -> ToolResult {
         "sessions_list" => session_tools::list(args.get("backend").and_then(Value::as_str).map(str::to_string), cx).await,
         "sessions_read" => session_tools::read(s("id"), args.get("backend").and_then(Value::as_str).map(str::to_string), cx).await,
         "sessions_prompt" => with_window(cx, |w, cx| session_tools::prompt(&s("id"), &s("text"), w, cx)),
+        #[cfg(feature = "browser")]
         t if t.starts_with("browser_") => browser_tools::run(t, &args, cx).await,
         "actions_run" => shell_tools::run_action(s("id"), cx).await,
         "layouts_switch" => shell_tools::switch_layout(s("name"), cx).await,

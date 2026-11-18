@@ -18,9 +18,8 @@ jobs:
   windows:
     runs-on: windows-latest
     env:
-      # Modules ported so far. Browser (WebView2), Terminal (ConPTY) and MCP (named pipe) come
-      # later: docs/design/windows-port.md.
-      FEATURES: notes,assistant,palette,calendar,sessions,tasks
+      # Modules ported so far. The Browser (WebView2) comes later: docs/design/windows-port.md.
+      FEATURES: notes,terminal,assistant,palette,calendar,sessions,tasks,mcp
       # Static C runtime: ados.exe runs without the Visual C++ Redistributable.
       CARGO_BUILD_TARGET: x86_64-pc-windows-msvc
       CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: -C target-feature=+crt-static
@@ -63,6 +62,27 @@ jobs:
           (New-Object -ComObject WScript.Shell).SendKeys("^k")
           Start-Sleep 3
           Shot "2-palette"
+          (New-Object -ComObject WScript.Shell).SendKeys("{ESC}")
+          # Terminal: the Research layout has one, so a shell runs under aDOs (ConPTY).
+          $shells = Get-CimInstance Win32_Process -Filter "ParentProcessId = $($app.Id)" | Where-Object { $_.Name -in "pwsh.exe", "powershell.exe" }
+          if (-not $shells) { throw "no PowerShell under ados.exe: the Terminal did not start a shell" }
+          "Terminal shell: $($shells.Name -join ', ')"
+          (New-Object -ComObject WScript.Shell).SendKeys("^3")
+          Start-Sleep 2
+          (New-Object -ComObject WScript.Shell).SendKeys("echo ados-terminal-ok{ENTER}")
+          Start-Sleep 3
+          Shot "3-terminal"
+          # MCP: the bridge finds the running aDOs through current.json and lists its tools.
+          $run = "$env:LOCALAPPDATA\ados\run"
+          if (-not (Test-Path "$run\current.json")) { throw "no MCP current.json in $run" }
+          '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | Set-Content -Encoding ascii smoke/mcp-in.json
+          $bridge = Start-Process $env:EXE -ArgumentList "mcp-bridge" -RedirectStandardInput smoke/mcp-in.json -RedirectStandardOutput smoke/mcp-out.json -RedirectStandardError smoke/mcp-err.txt -NoNewWindow -PassThru
+          if (-not $bridge.WaitForExit(15000)) { $bridge.Kill(); throw "ados mcp-bridge did not finish" }
+          $out = Get-Content -Raw smoke/mcp-out.json
+          Get-Content -Raw smoke/mcp-err.txt
+          if ($out -notmatch '"notes_list"') { throw "MCP tools/list did not answer: $out" }
+          if ($out -match '"browser_open"') { throw "MCP lists browser tools in a build without the Browser" }
+          "MCP tools/list answered ($($out.Length) bytes)"
           if (-not (Test-Path "$env:APPDATA\ados")) { throw "no data folder at %APPDATA%\ados" }
           Get-ChildItem "$env:APPDATA\ados" | Format-Table Name
           Stop-Process -Id $app.Id
@@ -76,8 +96,9 @@ jobs:
         # building them together makes the linkers collide on one output file.
         run: |
           $failed = @()
-          foreach ($p in "ados-core", "ados-agents", "ados-notes", "ados-tasks", "ados-calendar", "ados-palette", "ados-sessions", "ados-assistant") {
-            cargo test --release --no-fail-fast -p $p
+          foreach ($p in "ados-core", "ados-agents", "ados-notes", "ados-tasks", "ados-calendar", "ados-palette", "ados-sessions", "ados-assistant", "ados-terminal", "ados-mcp --no-default-features") {
+            $a = $p -split ' '
+            cargo test --release --no-fail-fast -p @a
             if ($LASTEXITCODE -ne 0) { $failed += $p }
           }
           if ($failed) { throw "tests failed in: $($failed -join ', ')" }

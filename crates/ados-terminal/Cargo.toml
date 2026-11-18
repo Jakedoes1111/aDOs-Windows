@@ -12,3 +12,7 @@ alacritty_terminal = "=0.26.0"
 async-channel = "2"
 parking_lot = "0.12"
 serde_json.workspace = true
+
+# Windows: the "is a program running in the shell" check before closing (pty.rs).
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_Diagnostics_ToolHelp"] }

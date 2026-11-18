@@ -149,12 +149,9 @@ impl Backend {
             }
         }
         let term = Arc::new(FairMutex::new(term));
-        let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into());
-        let home = std::env::var_os("HOME")
-            .map(PathBuf::from)
-            .context("HOME is not set")?;
+        let home: PathBuf = std::env::home_dir().context("Could not find your home folder")?;
         let options = tty::Options {
-            shell: Some(tty::Shell::new(shell, vec!["-i".into()])),
+            shell: Some(shell()),
             working_directory: Some(home),
             env: HashMap::from([
                 ("TERM".into(), "xterm-256color".into()),
@@ -163,7 +160,10 @@ impl Backend {
             ..Default::default()
         };
         let pty = tty::new(&options, size.into(), 0).context("Could not start the shell")?;
+        #[cfg(unix)]
         let shell_pid = pty.child().id();
+        #[cfg(windows)]
+        let shell_pid = pty.child_watcher().pid().map_or(0, |pid| pid.get());
         let event_loop = EventLoop::new(term.clone(), proxy.clone(), pty, true, false)
             .context("Could not start the terminal event loop")?;
         let sender = event_loop.channel();
@@ -183,10 +183,36 @@ impl Backend {
         ))
     }
     /// A job holds the terminal (the foreground process group is not the shell's own).
+    #[cfg(unix)]
     pub fn foreground_job(&self) -> bool {
         std::fs::read_to_string(format!("/proc/{}/stat", self.shell_pid))
             .ok()
             .is_some_and(|stat| foreground_job(&stat))
+    }
+    /// Windows has no foreground group behind ConPTY: a program the shell started (vim, a
+    /// build, `ping -t`) is running when the shell has a child process.
+    #[cfg(windows)]
+    pub fn foreground_job(&self) -> bool {
+        use windows::Win32::Foundation::CloseHandle;
+        use windows::Win32::System::Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
+        };
+        if self.shell_pid == 0 {
+            return false;
+        }
+        // SAFETY: plain Win32 calls on a snapshot handle closed before returning.
+        unsafe {
+            let Ok(snapshot) = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) else { return false };
+            let mut entry = PROCESSENTRY32W { dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32, ..Default::default() };
+            let mut found = false;
+            let mut more = Process32FirstW(snapshot, &mut entry).is_ok();
+            while more && !found {
+                found = entry.th32ParentProcessID == self.shell_pid;
+                more = Process32NextW(snapshot, &mut entry).is_ok();
+            }
+            let _ = CloseHandle(snapshot);
+            found
+        }
     }
     pub fn exited(&self) -> bool {
         self.proxy.exited.load(Ordering::Acquire)
@@ -256,8 +282,22 @@ impl Drop for Backend {
     }
 }
 
+/// The shell: `$SHELL` (else `/bin/sh`) on Unix; PowerShell 7 (`pwsh.exe`) when it is on
+/// `PATH` on Windows, else the Windows PowerShell every Windows has.
+fn shell() -> tty::Shell {
+    #[cfg(unix)]
+    return tty::Shell::new(std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()), vec!["-i".into()]);
+    #[cfg(windows)]
+    {
+        let on_path = |exe: &str| std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d.join(exe).is_file()));
+        let program = if on_path("pwsh.exe") { "pwsh.exe" } else { "powershell.exe" };
+        tty::Shell::new(program.into(), vec!["-NoLogo".into()])
+    }
+}
+
 /// From `/proc/<shell>/stat`: the terminal's foreground group (`tpgid`) is not the shell's
 /// group (`pgrp`), so a job such as `vim` or `sleep` is running in it.
+#[cfg_attr(windows, allow(dead_code))]
 fn foreground_job(stat: &str) -> bool {
     // The command name may hold spaces and parentheses: fields start after the last ") ".
     let Some((_, rest)) = stat.rsplit_once(") ") else { return false };
