@@ -136,10 +136,10 @@ Never run: any Windows binary, any test on Windows (CI runs them without gating)
 
 From now on compiles go to cloud sessions or CI, not the owner's laptop.
 
-## Open questions for the owner
+## Owner decisions (18 Nov 2026)
 
-1. Windows 10 support: is Windows 11 only acceptable (WebView2 ships with it), or must Windows 10 work, with the Evergreen runtime installer?
-2. Data folder: `%APPDATA%\ados` (roams with the profile) or `%LOCALAPPDATA%\ados` (machine-local, better for large caches)? The plan assumes `%APPDATA%`.
-3. Terminal default shell: Windows PowerShell 5 (`powershell.exe`, always present) or PowerShell 7 (`pwsh.exe`) when installed?
-4. Floating cards over a page: Linux cuts a hole in the page; on Windows the first version hides the page while a card overlaps it. Acceptable for a first version?
-5. When will a Windows machine or VM exist for real UI checks?
+1. **Windows 11 only** for now; Windows 10 (Evergreen WebView2 installer) later.
+2. Data folder (proposed, awaiting a yes): user data in `%APPDATA%\ados` (what Linux keeps in `~/.local/share/ados`; Rust's `data_dir()` convention); the WebView2 profile and cache, the lock and the MCP pipe state in `%LOCALAPPDATA%\ados` (large or machine-only, must not roam). `ADOS_HOME` still overrides both.
+3. Terminal shell: `pwsh.exe` (PowerShell 7) when on `PATH`, else `powershell.exe`.
+4. Floating cards over a page: try `SetWindowRgn` on a per-tab host HWND that holds the WebView2 (a window region clips painting and clicks of the window and its children, like X SHAPE). Fall back to hiding the page under a card, which Linux already does when SHAPE is missing.
+5. Windows for UI checks: not available in cloud Claude Code sessions (Linux). Plan: a UI smoke job on the GitHub `windows-latest` runner (launch `ados.exe`, screenshot, upload); a real Windows 11 machine or VM for interactive checks later.
