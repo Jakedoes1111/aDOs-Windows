@@ -126,6 +126,12 @@ CI (`.github/workflows/windows.yml`, `windows-latest`), first run 44281068275 on
 - Tests (not gating): the first test binary passed 9 of 9. `ados-agents/tests/fake_agent.rs` then failed 7 of 8 because it looked for `examples/fake_agent` without `.exe`; cargo stopped there, so the other crates' tests did not run. Fixed with `EXE_SUFFIX`, and the workflow now uses `--no-fail-fast`; the next run shows the full test picture.
 - The `standalone` examples in several crates collide on one output name (cargo warning, not an error).
 
+Second run 44285895483 on 3efb842 (all test binaries): build green; **13 tests fail on Windows**, 140 pass.
+- `ados-agents/tests/registry.rs` (7): the same missing `.exe` in its own copy of the path. Fixed after that run.
+- `ados-agents/tests/fake_agent.rs:133` `killed_agent_yields_crash_event`: expects the killed child to exit non-successfully the Unix way. Step 2.
+- `ados-core/src/capture.rs:163`: the test uses Unix paths (`/etc/hostname` as an existing file). Step 2 (test needs a Windows path; `detect` itself probably works).
+- `ados-notes/src/file.rs:79` `atomic_write` (4 tests): **real bug**: after the rename, `File::open(parent)?.sync_all()` opens a folder, which Windows refuses. The note is written, then the save reports failure. Fix in step 2: do the folder sync only on Unix. Until then Notes on Windows shows a save error on every save.
+
 Never run: any Windows binary, any test on Windows (CI runs them without gating), the UI on Windows.
 
 From now on compiles go to cloud sessions or CI, not the owner's laptop.

@@ -11,7 +11,7 @@ fn fake_agent(name: &str, auth: bool) -> (BackendConfig, PathBuf) {
     let path = exe
         .parent()
         .and_then(|deps| deps.parent())
-        .map(|dir| dir.join("examples").join("fake_agent"))
+        .map(|dir| dir.join("examples").join(format!("fake_agent{}", std::env::consts::EXE_SUFFIX)))
         .expect("target dir");
     assert!(path.exists(), "{} missing: run via `cargo test -p ados-agents`", path.display());
     let dir = scratch(name);
