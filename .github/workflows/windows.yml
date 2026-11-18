@@ -1,6 +1,6 @@
-name: Windows build
+name: Build
 
-# Private repo, limited minutes: main and on demand only.
+# Private repo, limited minutes: main and on demand only (`gh workflow run windows.yml --ref <branch>`).
 on:
   push:
     branches: [main]
@@ -8,18 +8,23 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: windows-${{ github.ref }}
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  # Modules ported so far. Browser (WebView2), Terminal (ConPTY) and MCP (named pipe) come later:
-  # docs/design/windows-port.md.
-  FEATURES: notes,assistant,palette,calendar,sessions,tasks
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  windows:
     runs-on: windows-latest
+    env:
+      # Modules ported so far. Browser (WebView2), Terminal (ConPTY) and MCP (named pipe) come
+      # later: docs/design/windows-port.md.
+      FEATURES: notes,assistant,palette,calendar,sessions,tasks
+      # Static C runtime: ados.exe runs without the Visual C++ Redistributable.
+      CARGO_BUILD_TARGET: x86_64-pc-windows-msvc
+      CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: -C target-feature=+crt-static
+      EXE: target/x86_64-pc-windows-msvc/release/ados.exe
     steps:
       - uses: actions/checkout@v4
       # rust-toolchain.toml pins the toolchain; rustup installs it on first use.
@@ -27,11 +32,61 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo build -p ados --release --no-default-features --features ${{ env.FEATURES }}
+      - name: Package
+        run: |
+          New-Item -ItemType Directory -Force dist/aDOs | Out-Null
+          Copy-Item $env:EXE, docs/windows/README.txt dist/aDOs/
       - uses: actions/upload-artifact@v4
         with:
-          name: ados-windows-x64
-          path: target/release/ados.exe
+          name: aDOs-windows-x64
+          path: dist/aDOs/
+      - name: Start the app and take screenshots
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          New-Item -ItemType Directory -Force smoke | Out-Null
+          function Shot($name) {
+            $b = [System.Windows.Forms.SystemInformation]::VirtualScreen
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Left, $b.Top, 0, 0, $bmp.Size)
+            $bmp.Save("smoke/$name.png")
+          }
+          # No ADOS_HOME: the default data folder is under test too.
+          $app = Start-Process $env:EXE -PassThru
+          Start-Sleep 15
+          Shot "1-start"
+          if ($app.HasExited) { throw "ados.exe stopped at start, exit code $($app.ExitCode)" }
+          # A second launch on the same data folder must hand off to the first and exit 0.
+          $second = Start-Process $env:EXE -PassThru
+          if (-not $second.WaitForExit(10000)) { throw "the second launch did not exit" }
+          if ($second.ExitCode -ne 0) { throw "the second launch exited with $($second.ExitCode)" }
+          if ($app.HasExited) { throw "the first aDOs stopped during the second launch" }
+          (New-Object -ComObject WScript.Shell).SendKeys("^k")
+          Start-Sleep 3
+          Shot "2-palette"
+          if (-not (Test-Path "$env:APPDATA\ados")) { throw "no data folder at %APPDATA%\ados" }
+          Get-ChildItem "$env:APPDATA\ados" | Format-Table Name
+          Stop-Process -Id $app.Id
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-screenshots
+          path: smoke/
       - name: Test the ported crates
-        # Not yet a gate: the tests were written on Linux and have never run on Windows.
-        continue-on-error: true
         run: cargo test --release --no-fail-fast -p ados-core -p ados-agents -p ados-notes -p ados-tasks -p ados-calendar -p ados-palette -p ados-sessions -p ados-assistant
+
+  # Linux must keep building from the same tree.
+  linux-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: System packages (README, Ubuntu list)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang libclang-dev pkg-config cmake \
+            libfontconfig1-dev libfreetype6-dev libx11-dev libxi-dev libxrandr-dev libxcursor-dev \
+            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev libvulkan-dev libgbm-dev \
+            libasound2-dev libssl-dev libdbus-1-dev
+      - run: rustup show
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check -p ados
