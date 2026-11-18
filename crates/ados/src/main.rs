@@ -17,6 +17,7 @@ mod page_actions;
 mod overlay_focus;
 #[cfg(feature = "mcp")]
 mod mcp;
+#[cfg_attr(windows, path = "single_windows.rs")]
 mod single;
 
 use gpui_kit::component::Root;
