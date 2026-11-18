@@ -153,7 +153,7 @@ mod tests {
         );
         assert_eq!(address("", Engine::Chromium), DEFAULT_URL);
         assert_eq!(address("", Engine::Servo), SERVO_START);
-        assert_eq!(State::default().url, SERVO_START);
+        assert_eq!(State::default().url, Engine::default().start_page());
         assert_eq!(
             address("a & café", Engine::Servo),
             "https://search.brave.com/search?q=a+%26+caf%C3%A9"
