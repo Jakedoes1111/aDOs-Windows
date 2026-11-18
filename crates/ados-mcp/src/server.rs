@@ -2,7 +2,9 @@
 //! through `uds_windows`, in the owner's own profile folder), a per-launch secret, and one
 //! thread per connection. Tool calls go to the GPUI thread over a channel and are waited
 //! for with the tool's timeout, so an agent never hangs on aDOs.
-use std::io::{BufRead, BufReader, Read, Write};
+#[cfg(unix)]
+use std::io::Read;
+use std::io::{BufRead, BufReader, Write};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 #[cfg(unix)]
