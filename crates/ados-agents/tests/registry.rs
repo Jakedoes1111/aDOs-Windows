@@ -44,6 +44,10 @@ fn starts(dir: &std::path::Path) -> usize {
 }
 
 fn alive(pid: u32) -> bool {
+    if cfg!(windows) {
+        let out = std::process::Command::new("tasklist").args(["/FI", &format!("PID eq {pid}"), "/NH"]).output();
+        return out.is_ok_and(|o| String::from_utf8_lossy(&o.stdout).split_whitespace().any(|w| w == pid.to_string()));
+    }
     // A killed child stays a zombie until reaped; count only live states.
     std::fs::read_to_string(format!("/proc/{pid}/stat"))
         .map(|s| !s.split(") ").nth(1).is_some_and(|rest| rest.starts_with('Z')))
@@ -205,7 +209,11 @@ fn crash_reaches_every_subscriber_and_sticks() {
     let (sink, events, _q) = Sink::new();
     let _sub = backend.subscribe(&session, sink);
     let pid = last_pid(&dir);
-    let _ = std::process::Command::new("kill").args(["-9", &pid.to_string()]).status();
+    let _ = if cfg!(windows) {
+        std::process::Command::new("taskkill").args(["/F", "/PID", &pid.to_string()]).status()
+    } else {
+        std::process::Command::new("kill").args(["-9", &pid.to_string()]).status()
+    };
     wait_until("crash event", || matches!(events.try_recv(), Ok(AgentEvent::Crashed { .. })));
     assert!(matches!(backend.status(), Status::Failed(_)));
     assert!(run(backend.list_sessions(None, Some("x".into()))).is_err());

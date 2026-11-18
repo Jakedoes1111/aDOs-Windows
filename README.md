@@ -8,7 +8,7 @@ A native desktop workspace for Linux, built in Rust on [GPUI](https://github.com
 
 aDOs is one window where your work and your AI agents live together. Notes, a terminal, a browser, tasks and a calendar sit in a tiled workspace. Every agent session (pi, Claude Code, Codex) runs behind one interface, and an always-there assistant can see what you're working on and act inside the app.
 
-Midnight-black, keyboard-first, icon-first. A personal project at v1.0: usable daily, not stable. Linux with X11 only.
+Midnight-black, keyboard-first, icon-first. A personal project at v1.0: usable daily, not stable. Linux with X11, plus a Windows 11 preview.
 
 ## What works today
 
@@ -53,7 +53,7 @@ Agent backends are listed in `ADOS_HOME/backends.toml`. All data lives under `AD
 
 ## Install
 
-aDOs runs on **Linux with X11**. The Browser embeds its engine as an X11 child window, so there is no native Windows or macOS build yet.
+aDOs runs on **Linux with X11**. A native **Windows 11** preview without the Terminal and Browser exists: see [Install on Windows](#install-on-windows-preview). There is no macOS build.
 
 | Your system | How |
 |---|---|
@@ -62,7 +62,8 @@ aDOs runs on **Linux with X11**. The Browser embeds its engine as an X11 child w
 | Arch, Manjaro | Steps 1 to 5 with: `sudo pacman -S base-devel clang cmake pkgconf fontconfig freetype2 libx11 libxi libxrandr libxcursor libxcb libxkbcommon libxkbcommon-x11 wayland vulkan-icd-loader mesa alsa-lib openssl dbus` |
 | Another distro | Install the same libraries under your distro's names: a C/C++ compiler, clang, cmake, pkg-config, and the development files for fontconfig, freetype, X11/xcb, xkbcommon and xkbcommon-x11, wayland, vulkan, gbm, alsa, openssl, dbus. |
 | A Wayland desktop | Works through XWayland: start with `WAYLAND_DISPLAY= target/debug/ados`. |
-| Windows 10/11 | Use WSL2 (it ships a Linux display, WSLg): `wsl --install -d Ubuntu-24.04`, then follow the Ubuntu steps inside it. |
+| Windows 11 | The native preview below, or the full Linux app in WSL2 (it ships a Linux display, WSLg): `wsl --install -d Ubuntu-24.04`, then follow the Ubuntu steps inside it. |
+| Windows 10 | WSL2 as above; the native build is Windows 11 only for now. |
 | macOS | Use a Linux virtual machine (UTM or VirtualBox with Ubuntu 24.04, 8 GB of memory or more), then follow the Ubuntu steps inside it. |
 
 Only Fedora and Ubuntu 24.04 have been built and run. The Arch list, WSL2 and a macOS virtual machine are untested: expect to fix small things, and the Browser is the part most likely to need them.
@@ -99,6 +100,28 @@ Only Fedora and Ubuntu 24.04 have been built and run. The Arch list, WSL2 and a 
    ADOS_HOME=$PWD/target/try target/debug/ados         # a throwaway data folder
    ```
    A cold build takes about 6 minutes on 4 cores. `./run` builds and starts in one step.
+
+## Install on Windows (preview)
+
+A native Windows 11 (x64) build, made and started on every push by GitHub Actions (`.github/workflows/windows.yml`). Few people have run it on a real PC yet.
+
+| Part | On Windows |
+|---|---|
+| Notes, Tasks, Calendar, Sessions, assistant, palette, capture, layouts, Settings, shortcuts | In the build |
+| Terminal | Not yet ("Not in this build yet."); planned on ConPTY, PowerShell 7 when installed, else Windows PowerShell |
+| Browser | Not yet; planned on WebView2 (part of Windows 11) |
+| Agent tools over MCP | Not yet; planned over a named pipe |
+
+1. Download the `aDOs-windows-x64` zip from a green run of the **Build** workflow (Actions tab), or get it from someone who has.
+2. Unzip it anywhere and run `ados.exe`. The app is not signed yet: on "Windows protected your PC", choose More info, then Run anyway.
+3. Your data is in `%APPDATA%\ados` (`ADOS_HOME` overrides it). Agents need Node.js (`npx`) as on Linux.
+
+The zip holds a `README.txt` with the same steps for someone who does not read this page.
+
+**Floating cards over web pages (when the Browser arrives).** A web page is a native window (Linux: an X11 child window; Windows: WebView2) that always draws on top of aDOs. When a floating card such as the assistant or a comment card opens over a page, aDOs cuts a card-shaped hole in the page window so the rest of the page stays visible and clicks in the hole reach the card. If the system cannot cut holes (an X server without the SHAPE extension; on Windows, if the window-region method fails on that PC), the page hides while the card is open and returns when it closes. Nothing is lost either way.
+
+Build it yourself on Windows: install Rust through rustup and the Visual Studio Build Tools (C++ workload, with the Windows SDK), then
+`cargo build -p ados --release --no-default-features --features notes,assistant,palette,calendar,sessions,tasks`.
 
 ## Agents (optional)
 
