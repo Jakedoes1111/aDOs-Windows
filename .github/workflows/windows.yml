@@ -1,0 +1,36 @@
+name: Windows build
+
+# Private repo, limited minutes: main and on demand only.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Modules ported so far. Browser (WebView2), Terminal (ConPTY) and MCP (named pipe) come later:
+  # docs/design/windows-port.md.
+  FEATURES: notes,assistant,palette,calendar,sessions,tasks
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      # rust-toolchain.toml pins the toolchain; rustup installs it on first use.
+      - run: rustup show
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build -p ados --release --no-default-features --features ${{ env.FEATURES }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ados-windows-x64
+          path: target/release/ados.exe
+      - name: Test the ported crates
+        # Not yet a gate: the tests were written on Linux and have never run on Windows.
+        continue-on-error: true
+        run: cargo test --release -p ados-core -p ados-agents -p ados-notes -p ados-tasks -p ados-calendar -p ados-palette -p ados-sessions -p ados-assistant
