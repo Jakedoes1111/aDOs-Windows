@@ -1,0 +1,4 @@
+# Optional: put a symlink to a distro .so here when its -dev/-devel package is missing
+# (e.g. libxkbcommon-x11.so). The folder is not tracked; an empty or absent one is fine.
+[env]
+LIBRARY_PATH = { value = ".cargo/native", relative = true }

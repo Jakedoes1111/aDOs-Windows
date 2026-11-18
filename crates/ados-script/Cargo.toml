@@ -1,0 +1,17 @@
+[package]
+name = "ados-script"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+gpui-kit.workspace = true
+ados-core = { path = "../ados-core" }
+# Experimental crate: interfaces change between minors, so pin exactly. No `webview` (it swaps GPUI).
+# `quickjs` is the only script engine; without it gpui-shell does not compile.
+gpui-shell = { version = "=0.9.1", default-features = false, features = ["quickjs"] }
+notify = "8"
+async-channel = "2"
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true

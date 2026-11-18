@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>aDOs fixture: keys</title>
+<style>body{font:16px sans-serif;margin:24px}</style>
+<h1>Key diagnostics</h1>
+<p>Shows whether the page has keyboard focus and the last key it received.</p>
+<p><a href="index.html">First link</a> <input id="f" autocomplete="off"></p>
+<p id="out">waiting</p>
+<script>
+let last = 'none';
+addEventListener('keydown', e => { last = e.key; });
+setInterval(() => {
+  const a = document.activeElement;
+  out.textContent = 'hasFocus=' + document.hasFocus() + ' active=' + (a ? a.tagName : 'null') + ' last=' + last;
+}, 200);
+</script>

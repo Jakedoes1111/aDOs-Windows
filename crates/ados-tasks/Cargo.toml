@@ -1,0 +1,14 @@
+[package]
+name = "ados-tasks"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+gpui-kit.workspace = true
+ados-core = { path = "../ados-core" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# Already in the dependency tree through gpui-component; `serde` stores dates as text.
+chrono = { version = "0.4", features = ["serde"] }

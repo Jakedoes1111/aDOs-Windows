@@ -1,0 +1,35 @@
+[package]
+name = "ados"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[features]
+default = ["notes", "terminal", "browser", "assistant", "palette", "calendar", "sessions", "tasks", "mcp"]
+notes = ["dep:ados-notes"]
+terminal = ["dep:ados-terminal"]
+browser = ["dep:ados-browser"]
+assistant = ["dep:ados-assistant"]
+palette = ["dep:ados-palette"]
+calendar = ["dep:ados-calendar"]
+sessions = ["dep:ados-sessions"]
+tasks = ["dep:ados-tasks"]
+mcp = ["dep:ados-mcp"]
+
+[dependencies]
+ados-core = { path = "../ados-core" }
+ados-notes = { path = "../ados-notes", optional = true }
+ados-terminal = { path = "../ados-terminal", optional = true }
+ados-browser = { path = "../ados-browser", optional = true }
+ados-assistant = { path = "../ados-assistant", optional = true }
+ados-palette = { path = "../ados-palette", optional = true }
+ados-calendar = { path = "../ados-calendar", optional = true }
+ados-sessions = { path = "../ados-sessions", optional = true }
+ados-tasks = { path = "../ados-tasks", optional = true }
+ados-mcp = { path = "../ados-mcp", optional = true }
+ados-agents = { path = "../ados-agents" }
+gpui-kit.workspace = true
+anyhow.workspace = true
+async-channel = "2"
+serde.workspace = true
+serde_json.workspace = true

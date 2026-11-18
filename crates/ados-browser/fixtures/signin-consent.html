@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>Example sign-in: allow</title>
+<style>body{font:18px sans-serif;margin:24px;background:#fff}button{font-size:18px}</style>
+<h1>Allow aDOs fixture to see your name?</h1>
+<p id="state"></p>
+<p><button id="allow" onclick="allow()">Allow</button></p>
+<script>
+function allow() {
+  if (!window.opener) { document.getElementById('state').textContent = 'window.opener is gone: the sign-in cannot finish'; return; }
+  window.opener.postMessage({user: 'jake@example.com'}, location.origin);
+  window.close();
+}
+</script>

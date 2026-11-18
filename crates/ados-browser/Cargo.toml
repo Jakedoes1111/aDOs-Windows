@@ -1,0 +1,20 @@
+[package]
+name = "ados-browser"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+gpui-kit.workspace = true
+ados-core = { path = "../ados-core" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+raw-window-handle = "0.6"
+x11rb = { version = "0.13", features = ["composite", "shape", "xtest"] }
+tungstenite = "0.28"
+ureq = { version = "3", default-features = false, features = ["json"] }
+async-channel = "2"
+rustix = { version = "1", features = ["event", "process"] }
+base64 = "0.22"
+png = "0.18"

@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>aDOs fixture: hints</title>
+<style>body{font:16px sans-serif;margin:24px}p{margin:14px 0}</style>
+<h1>Link hints check</h1>
+<p><a href="second.html">Second page</a> · <a href="long.html">Long page</a></p>
+<p><button id="b" onclick="n.textContent=+n.textContent+1">Count clicks</button> clicks: <span id="n">0</span></p>
+<p><label for="i">Field</label> <input id="i" autocomplete="off"></p>
+<p><span role="button" tabindex="0" onclick="n.textContent=+n.textContent+10">Role button (+10)</span></p>
+<p id="out">waiting</p>
+<script>
+setInterval(() => {
+  const a = document.activeElement;
+  out.textContent = 'focus=' + (a ? a.tagName + (a.id ? '#' + a.id : '') : 'null') + ' field="' + i.value + '"';
+}, 200);
+</script>

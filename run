@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Build (if needed) and start aDOs.
+cd "$(dirname "$0")" && cargo build -p ados && exec ./target/debug/ados "$@"

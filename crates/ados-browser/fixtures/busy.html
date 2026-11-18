@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>aDOs fixture: busy</title>
+<p>This page keeps its script busy for 8 seconds after it loads (an engine read times out meanwhile).</p>
+<p id="done">Busy…</p>
+<script>
+setTimeout(() => { const end = Date.now() + 8000; while (Date.now() < end) {} document.getElementById('done').textContent = 'Done.'; }, 300);
+</script>

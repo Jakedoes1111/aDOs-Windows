@@ -1,0 +1,12 @@
+[package]
+name = "ados-core"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+gpui-kit.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml = "0.8"

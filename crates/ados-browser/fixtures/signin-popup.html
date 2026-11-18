@@ -1,0 +1,6 @@
+<!doctype html><meta charset="utf-8"><title>Example sign-in</title>
+<style>body{font:18px sans-serif;margin:24px;background:#fff}button{font-size:18px}</style>
+<h1>Sign in to Example</h1>
+<p id="who">Opened by: <span id="from"></span></p>
+<p><button id="pick" onclick="location.href='signin-consent.html'">Use account jake@example.com</button></p>
+<script>document.getElementById('from').textContent = window.opener ? 'a page (window.opener set)' : 'nothing (window.opener missing)';</script>

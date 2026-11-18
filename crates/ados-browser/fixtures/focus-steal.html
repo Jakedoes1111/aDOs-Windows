@@ -1,0 +1,26 @@
+<!doctype html><meta charset="utf-8"><title>aDOs fixture: focus steal</title>
+<style>
+body{font:18px sans-serif;margin:20px;background:#fff;color:#000}
+#st{font:bold 22px monospace;padding:8px;border:3px solid #888}
+#st.yes{border-color:#0a0;background:#dfd}#st.no{border-color:#c00;background:#fdd}
+#log{font:15px monospace;white-space:pre;border:1px solid #888;padding:4px;min-height:5.6em;margin-top:4px}
+input{font:18px monospace}
+</style>
+<div id="st">waiting</div>
+<div id="log"></div>
+<p><input id="auto" autofocus autocomplete="off" placeholder="autofocus field"> <button id="later">focus() in 3 s</button> <span id="cd"></span></p>
+<p>Focus steal: the field has <code>autofocus</code>; the button calls <code>focus()</code> on it 3 s after a press (also 3 s after load). The box shows document.hasFocus() and activeElement, below it the last 5 key events.</p>
+<script>
+let keys = [], at = Date.now() + 3000;
+function rec(e){ keys.push(e.type.replace('key','') + ' ' + (e.key === ' ' ? 'Space' : e.key)); if (keys.length > 5) keys.shift(); }
+addEventListener('keydown', rec, true); addEventListener('keyup', rec, true);
+later.onclick = () => { at = Date.now() + 3000; };
+setInterval(() => {
+  if (at && Date.now() >= at) { at = 0; auto.focus(); window.focus(); }
+  cd.textContent = at ? 'focus() in ' + Math.ceil((at - Date.now()) / 1000) + ' s' : 'focus() called';
+  const a = document.activeElement, h = document.hasFocus();
+  st.className = h ? 'yes' : 'no';
+  st.textContent = 'hasFocus=' + h + ' active=' + (a ? a.tagName + (a.id ? '#' + a.id : '') : 'null');
+  log.textContent = keys.join('\n');
+}, 100);
+</script>

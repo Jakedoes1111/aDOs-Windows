@@ -1,0 +1,22 @@
+[package]
+name = "ados-agents"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+# ACP client for aDOs: starts agent backends (pi-acp, codex-acp, claude-agent-acp)
+# and turns their session updates into plain `AgentEvent`s. No UI, no GPUI.
+
+[dependencies]
+agent-client-protocol = { version = "=5.2.0", features = ["process"] }
+anyhow.workspace = true
+serde.workspace = true
+async-channel = "2"
+futures = "0.3"
+serde_json.workspace = true
+smol = "2"
+toml = "0.8"
+
+[dev-dependencies]
+# The fake agent in examples/ serves ACP over its own stdio.
+agent-client-protocol = { version = "=5.2.0", features = ["process", "stdio"] }

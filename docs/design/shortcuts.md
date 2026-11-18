@@ -1,0 +1,32 @@
+# Shortcuts: one registry, an editable keymap
+
+- **One registry** in `ados-core::shortcuts`:
+  - `defaults.rs` lists every shortcut: stable id, title, scope, default chord(s), and any intended overrides.
+  - Crates attach their action by id with `shortcuts::bind(cx, "notes.new", NewNote)`.
+  - No direct `cx.bind_keys` / `KeyBinding::new` is left in any crate's `src/`. Only the library's own bindings remain, plus the standalone `examples/`.
+  - Our bindings carry a `KeyBindingMetaIndex` tag. A rebuild keeps every untagged binding (gpui-kit text inputs and so on) and replaces only ours.
+  - Ids match the palette action ids, so the palette, rail and top-bar tooltips, and the Settings menu show the live chord.
+- **`ADOS_HOME/keymap.toml`** holds only the user's changes:
+  - `"notes.new" = "ctrl-alt-n"` rebinds. `""` unbinds. A list gives several chords.
+  - Unquoted dotted ids (`notes.new = …`) and `Ctrl+Alt+N` spelling also work.
+  - The file is applied at start and polled every 500 ms for changes; a change clears our bindings and binds again.
+  - A bad entry is skipped and named in a toast. An unreadable file means defaults plus a toast. Startup never fails because of the keymap.
+- **Browser native grabs** follow the keymap:
+  - Every global, `AdosShell` or `BrowserPanel` shortcut is grabbed on the X child.
+  - When the keymap changes, the browser panel sends the new list to the runtime (`HostMsg::Shortcuts`). `Embed::shortcuts` ungrabs the old keys and grabs the new ones.
+  - Keys X cannot express are skipped. Before this change, one unsupported key stopped the browser from starting.
+- **Shortcuts editor** (`crates/ados/src/keys/`):
+  - Opens from Settings (rail gear) → "Shortcuts…", from the palette action "Edit shortcuts", or with **Ctrl+,** (it was free).
+  - Searchable list grouped by scope. Each row shows its chords as key caps, a blue dot when changed, a per-row reset button, intended-override notes and warnings. "Reset all" sits in the header.
+  - Tab or ↑↓ moves between rows with a visible blue focus ring. Enter or a click starts recording.
+  - While recording, keys are caught by `cx.intercept_keystrokes`, so Ctrl+K is recorded, not run. Enter saves, Esc cancels.
+- **Conflict handling**:
+  - Detection is pure (`model.rs`). Two shortcuts conflict when they share a chord and one scope contains the other (`global` ⊃ `AdosShell` ⊃ module contexts; `NotesPanel` ⊃ `NotesList`), unless one lists the other in `overrides`.
+  - Warnings, which do not count as conflicts:
+    - "Will be eaten by text fields": plain keys, Shift+key, Backspace, arrows, Ctrl+A/C/V/X/Z.
+    - "The window manager usually takes this": Alt+Tab, Alt+F4, Super+anything, Ctrl+Alt+Del/Backspace.
+  - Recording a chord that is already used stops recording and shows "Already used by <title> (<scope>)" with **Swap** (focused), **Replace** and **Cancel**.
+  - The header shows a red "N conflicts" button that filters the list.
+  - Starting up with a conflicting keymap.toml shows a toast "N shortcut conflicts" with a **Show** button that opens the editor filtered.
+- **Terminal Ctrl+L** is `terminal.keep_ctrl_l` ("Keep for the shell: clear screen", scope Terminal), declared as an override of `browser.focus_address`. The editor shows it as "Intended override: takes Focus browser address bar (Everywhere) here", not as a conflict.
+

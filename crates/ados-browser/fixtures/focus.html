@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><title>aDOs fixture: focus</title>
+<style>
+body{font:18px sans-serif;margin:20px;background:#fff;color:#000}
+#st{font:bold 22px monospace;padding:8px;border:3px solid #888}
+#st.yes{border-color:#0a0;background:#dfd}#st.no{border-color:#c00;background:#fdd}
+#log{font:15px monospace;white-space:pre;border:1px solid #888;padding:4px;min-height:8.6em;columns:2;margin-top:4px;columns:1}
+input,textarea{font:18px monospace}
+</style>
+<div id="st">waiting</div>
+<div id="log"></div>
+<p><a id="link" href="second.html">Link to second</a> <button id="btn" onclick="clicks++">Button</button> clicks=<b id="cl">0</b></p>
+<p><input id="f" autocomplete="off" placeholder="field"> <textarea id="t" rows="1" cols="16"></textarea></p>
+<p>Focus diagnostics: the box shows document.hasFocus() and document.activeElement, below it the last 8 key events (type key).</p>
+<script>
+let clicks = 0, keys = [];
+function rec(e){ keys.push(e.type.replace('key','') + ' ' + (e.key === ' ' ? 'Space' : e.key)); if (keys.length > 8) keys.shift(); }
+addEventListener('keydown', rec, true); addEventListener('keyup', rec, true);
+setInterval(() => {
+  const a = document.activeElement, h = document.hasFocus();
+  st.className = h ? 'yes' : 'no';
+  st.textContent = 'hasFocus=' + h + ' active=' + (a ? a.tagName + (a.id ? '#' + a.id : '') : 'null');
+  log.textContent = keys.join('\n');
+  cl.textContent = clicks;
+}, 100);
+</script>

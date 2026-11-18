@@ -1,0 +1,10 @@
+<!doctype html><meta charset="utf-8"><title>aDOs fixture: start</title>
+<style>body{font:16px sans-serif;margin:24px}</style>
+<h1>Fixture start page</h1>
+<p>Served locally for cloud UI tests (the sandbox proxy blocks Servo from the internet).</p>
+<p><a id="next" href="second.html">Go to the second page</a></p>
+<form onsubmit="out.textContent='Submitted: '+q.value;return false">
+  <label>Search field <input id="q" name="q" autocomplete="off"></label> <button>Submit</button>
+</form>
+<p id="out"></p>
+<p><a href="long.html">Long page for scrolling</a></p>

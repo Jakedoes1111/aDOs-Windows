@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>aDOs fixture: focus probe</title>
+<style>
+body{background:#05070a;color:#e6e9ef;font:22px/1.35 monospace;margin:20px}
+#st{font-size:26px;color:#7fa6ff} input,button{font:22px monospace;background:#12151b;color:#e6e9ef;border:2px solid #4a5160;padding:6px 10px;margin:6px 8px 6px 0}
+a{color:#7fa6ff} #log{white-space:normal;color:#ffd27f;font-size:26px}
+</style>
+<div id="st">starting</div>
+<div><a id="lnk" href="index.html">LINK</a>
+<input id="fld" autocomplete="off" placeholder="field">
+<button id="btn" onclick="clicks++">BUTTON</button></div>
+<div style="color:#939ba8;font-size:16px">last 8 key events, newest first (v down, ^ up, C/S/A/M = Ctrl/Shift/Alt/Meta held)</div>
+<div id="log"></div>
+<script>
+let clicks = 0; const ev = [];
+const mods = e => (e.ctrlKey?'C':'')+(e.shiftKey?'S':'')+(e.altKey?'A':'')+(e.metaKey?'M':'');
+for (const t of ['keydown','keyup']) addEventListener(t, e => {
+  ev.unshift((t === 'keydown' ? 'v' : '^') + (mods(e) ? mods(e) + '-' : '') + (e.key === ' ' ? 'Space' : e.key)); if (ev.length > 8) ev.pop();
+}, true);
+function desc(a){ return a ? a.tagName + (a.id ? '#' + a.id : '') : 'null'; }
+setInterval(() => {
+  st.textContent = 'hasFocus=' + document.hasFocus() + ' active=' + desc(document.activeElement)
+    + ' clicks=' + clicks + ' field="' + fld.value + '"';
+  log.textContent = ev.length ? ev.join('  ') : '(no keys yet)';
+}, 150);
+if (new URLSearchParams(location.search).get('autofocus') === '1') {
+  fld.focus(); addEventListener('load', () => setTimeout(() => fld.focus(), 300));
+  setTimeout(() => fld.focus(), 1500);
+}
+</script>

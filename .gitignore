@@ -1,0 +1,6 @@
+target/
+ref/
+*.log
+.cargo/native/
+.claude/
+docs/handoff/

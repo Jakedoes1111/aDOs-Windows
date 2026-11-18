@@ -1,0 +1,17 @@
+[package]
+name = "ados-sessions"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+# Sessions module: every session from every ACP backend in one list (VISION step 2).
+
+[dependencies]
+ados-agents = { path = "../ados-agents" }
+ados-core = { path = "../ados-core" }
+gpui-kit.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-channel = "2"
+futures = "0.3"

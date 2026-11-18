@@ -1,0 +1,14 @@
+[package]
+name = "ados-calendar"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+gpui-kit.workspace = true
+ados-core = { path = "../ados-core" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml = "0.8"
+jiff = { version = "0.2", features = ["serde"] }

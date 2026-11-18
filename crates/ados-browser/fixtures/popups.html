@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><title>aDOs fixture: popups</title>
+<style>body{font:18px sans-serif;margin:24px;background:#fff}p{margin:18px 0}a,button{font-size:18px}</style>
+<h1>Popups</h1>
+<p><a id="blank" href="second.html" target="_blank">Open second page in a new tab</a></p>
+<p><button id="open" onclick="window.open('index.html','_blank')">window.open the start page</button></p>
+<p><button id="signin" onclick="signIn()">Continue with Example</button></p>
+<p><button id="later" onclick="setTimeout(() => window.open('second.html', '_blank'), 4000)">window.open in 4 seconds</button></p>
+<p id="result">Signed out</p>
+<script>
+// Imitates an OAuth popup: the opener waits for postMessage, the popup posts and closes itself.
+function signIn() {
+  document.getElementById('result').textContent = 'Waiting for sign-in';
+  window.open('signin-popup.html', 'signin', 'popup,width=480,height=560');
+}
+addEventListener('message', (e) => {
+  if (e.origin === location.origin && e.data && e.data.user) {
+    document.getElementById('result').textContent = 'Signed in as ' + e.data.user;
+    document.title = 'aDOs fixture: signed in';
+  }
+});
+</script>

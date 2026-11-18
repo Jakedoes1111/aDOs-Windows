@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><title>aDOs fixture: keylog</title>
+<style>body{font:16px sans-serif;margin:24px}pre{white-space:pre-wrap}</style>
+<h1>Key log</h1>
+<p><a href="index.html">First link</a> <input id="f" autocomplete="off"> <button id="w" onclick="window.open('second.html')">window.open</button></p>
+<pre id="out">waiting</pre>
+<script>
+const log = [];
+for (const t of ['keydown', 'keyup']) addEventListener(t, e => { log.push(t[3] === 'd' ? 'D:' + e.key : 'U:' + e.key); out.textContent = log.slice(-12).join(' '); });
+</script>

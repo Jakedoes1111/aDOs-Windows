@@ -1,0 +1,23 @@
+[package]
+name = "ados-mcp"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+# aDOs's own MCP server: assistant tools over aDOs (VISION step 3).
+# Socket listener on plain threads, tool calls answered on the GPUI thread. No tokio.
+
+[dependencies]
+gpui-kit.workspace = true
+ados-core = { path = "../ados-core" }
+ados-agents = { path = "../ados-agents" }
+ados-notes = { path = "../ados-notes" }
+ados-tasks = { path = "../ados-tasks" }
+ados-calendar = { path = "../ados-calendar" }
+ados-browser = { path = "../ados-browser" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-channel = "2"
+futures = "0.3"
+jiff = "0.2"
