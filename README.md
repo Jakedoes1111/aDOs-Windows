@@ -2,7 +2,7 @@
 
 # aDOs for Windows
 
-> **This is the native Windows build of aDOs**: the same app as the Linux version, from the same source, ported to Windows 11. It is an early preview that nobody has used on a real PC yet. Notes, Tasks, Calendar, Sessions, the assistant and the palette are in. The Terminal, the Browser and the agent tools (MCP) are Linux only for now. The **Windows** column in the table below shows what the Windows build has; start at [Install on Windows](#install-on-windows-preview).
+> **This is the native Windows build of aDOs**: the same app as the Linux version, from the same source, ported to Windows 11. It is an early preview, checked only on GitHub's Windows test machine so far. Every module is in it: the Terminal runs PowerShell, the Browser uses WebView2 (Microsoft's Chromium-based engine, part of Windows 11), and agents get aDOs's tools over MCP. The **Windows** column in the table below says how each module differs there; start at [Install on Windows](#install-on-windows-preview).
 
 Thankyou Open Source Community
 
@@ -14,7 +14,7 @@ Midnight-black, keyboard-first, icon-first. A personal project at v1.0: usable d
 
 ## What works today
 
-Linux has every module. The **Windows** column says what is in the Windows build: built and unit-tested there, not yet used by a person.
+Both systems have every module. The **Windows** column says how each one differs there. It was built, unit-tested and started on GitHub's Windows test machine; a person has not used it yet.
 
 | Module | Key | What it does | Windows |
 |---|---|---|---|
@@ -22,17 +22,17 @@ Linux has every module. The **Windows** column says what is in the Windows build
 | Command palette | Ctrl+K | Fuzzy search over every action in the app. | Yes |
 | Quick capture | Ctrl+Shift+K | Type or paste a thought, link, file or image; it lands in Notes → Inbox. | Yes |
 | Notes | Ctrl+2 | Markdown files with list, search, autosave and preview, plus the Inbox of captures. | Yes |
-| Terminal | Ctrl+3 | A real shell in a PTY: colours, scrollback, copy and paste, vim and htop work. History is restored after a restart. | Not yet |
-| Browser | Ctrl+4 | Servo pages inside a panel: tabs, tiled tabs (side by side, stacked, grid) and follower tabs, popups opened as tabs, an address bar, back/forward and reload, keyboard into the page. Vimium-style `f`/`F` link hints. Switches to Chromium by itself for sites on a list (YouTube by default) or when Servo cannot load a page. | Not yet. Links open in your default browser. |
+| Terminal | Ctrl+3 | A real shell in a PTY: colours, scrollback, copy and paste, vim and htop work. History is restored after a restart. | Yes: PowerShell 7 when installed, else Windows PowerShell |
+| Browser | Ctrl+4 | Servo pages inside a panel: tabs, tiled tabs (side by side, stacked, grid) and follower tabs, popups opened as tabs, an address bar, back/forward and reload, keyboard into the page. Vimium-style `f`/`F` link hints. Switches to Chromium by itself for sites on a list (YouTube by default) or when Servo cannot load a page. | Yes, on WebView2: one engine, so no Servo/Chromium switch. Follower tabs, link hints and comments not yet tried there |
 | Sessions | Ctrl+6 | Every agent session from every backend in one list. Replay, continue, and answer permission prompts. | Yes |
 | Tasks | Ctrl+7 | My Day and All views. Quick add understands `Pay rent fri #home`. Delete has Undo. | Yes |
 | Calendar | Ctrl+8 | Day, Week and Agenda views. Native events, plus read-only `.ics` subscriptions. | Yes |
 | Assistant | Alt+Space | A small card that chats with pi, Claude Code or Codex and knows what the active panel shows. | Yes |
-| Settings | Ctrl+Alt+, | Interface zoom (75 to 150 %), startup layout, the Browser's Chromium list. | Yes, without the Browser rows |
+| Settings | Ctrl+Alt+, | Interface zoom (75 to 150 %), startup layout, the Browser's Chromium list. | Yes, without the Servo/Chromium rows |
 | Shortcuts | Ctrl+, | Rebind any key. Conflicts are detected and resolved with Swap or Replace. Stored in `keymap.toml`. | Yes |
-| Hint mode | Ctrl+; | Keyboard hints across the whole app. | Yes, without page hints |
+| Hint mode | Ctrl+; | Keyboard hints across the whole app. | Yes |
 
-On Linux, agents reach aDOs through a built-in **MCP server** (not in the Windows build yet; planned over a named pipe): 27 tools covering actions, context, layouts, notes, capture, tasks, calendar, sessions and the browser. Every change an agent makes shows a toast with Undo.
+Agents reach aDOs through a built-in **MCP server** (on Windows over an AF_UNIX socket, built into Windows 11): 27 tools covering actions, context, layouts, notes, capture, tasks, calendar, sessions and the browser. Every change an agent makes shows a toast with Undo.
 
 ## Architecture
 
@@ -43,10 +43,10 @@ crates/
   ados-agents      agent backends over ACP (pi-acp, claude-agent-acp, codex-acp), shared and idle-stopped
   ados-assistant   the assistant card
   ados-sessions    Sessions module
-  ados-mcp         aDOs as MCP tools for agents (stdio bridge to a secret-gated Unix socket; Linux only for now)
+  ados-mcp         aDOs as MCP tools for agents (stdio bridge to a secret-gated Unix socket; AF_UNIX on Windows)
   ados-notes       Notes and Inbox
-  ados-terminal    Terminal (Linux only for now; ConPTY planned)
-  ados-browser     Browser (Servo child window; Chromium fallback; Linux only, WebView2 planned)
+  ados-terminal    Terminal (a PTY on Linux, ConPTY on Windows)
+  ados-browser     Browser (Linux: Servo child window, Chromium fallback; Windows: WebView2, src/webview/)
   ados-palette     command palette and quick capture
   ados-tasks       Tasks
   ados-calendar    Calendar
@@ -57,7 +57,7 @@ Agent backends are listed in `ADOS_HOME/backends.toml`. All data lives under `AD
 
 ## Install
 
-aDOs runs on **Linux with X11**. A native **Windows 11** preview without the Terminal, Browser and agent tools exists: see [Install on Windows](#install-on-windows-preview). There is no macOS build.
+aDOs runs on **Linux with X11**. A native **Windows 11** preview with every module exists: see [Install on Windows](#install-on-windows-preview). There is no macOS build.
 
 | Your system | How |
 |---|---|
@@ -109,21 +109,23 @@ Only Fedora and Ubuntu 24.04 have been built and run. The Arch list, WSL2 and a 
 
 ## Install on Windows (preview)
 
-A native Windows 11 (x64) build, made by GitHub Actions on pushes to `main` that change code, and on demand (`.github/workflows/windows.yml`). **Nobody has used it on a real PC yet.** What has been checked, on GitHub's Windows Server runner without a GPU:
+A native Windows 11 (x64) build, made by GitHub Actions on pushes to `main` that change code, and on demand (`.github/workflows/windows.yml`). **Nobody has used it on a real PC yet.** What has been checked, on GitHub's Windows Server runner without a GPU (screenshots in each run's `smoke-screenshots`):
 
-- the app starts and draws Home, and Ctrl+K opens the palette (screenshots in the run's `smoke-screenshots`);
-- a second launch hands off to the first and exits;
-- the data folder `%APPDATA%\ados` is created;
-- 153 unit tests in 8 crates pass (core, agents, notes, tasks, calendar, palette, sessions, assistant).
+- the app starts and draws the Research layout, and Ctrl+K opens the palette;
+- the Terminal starts PowerShell under aDOs and runs a typed command;
+- the Browser starts WebView2 and shows a web page in its pane;
+- an agent's MCP bridge (`ados.exe mcp-bridge`) reaches the running app and lists its tools;
+- a second launch hands off to the first and exits; the data folder `%APPDATA%\ados` is created;
+- 226 unit tests in 11 crates pass.
 
 Agents have only been run against a fake test agent, never pi, Claude Code or Codex.
 
 | Part | On Windows |
 |---|---|
-| Notes, Tasks, Calendar, Sessions, assistant, palette, capture, layouts, Settings, shortcuts | In the build |
-| Terminal | Not yet ("Not in this build yet."); planned on ConPTY, PowerShell 7 when installed, else Windows PowerShell |
-| Browser | Not yet; planned on WebView2 (part of Windows 11). Links open in your default browser meanwhile. |
-| Agent tools over MCP | Not yet; planned over a named pipe |
+| Notes, Tasks, Calendar, Sessions, assistant, palette, capture, layouts, Settings, shortcuts | Same as Linux |
+| Terminal | ConPTY; PowerShell 7 (`pwsh`) when installed, else Windows PowerShell |
+| Browser | WebView2, one page per tab in the pane; tabs, tiles, popups as tabs. Its profile and cache are in `%LOCALAPPDATA%\ados\webview2` |
+| Agent tools over MCP | AF_UNIX socket in `%LOCALAPPDATA%\ados\run`, same per-launch secret as Linux |
 
 1. Download the `aDOs-windows-x64` zip from a green run of the **Build** workflow (Actions tab, signed in to GitHub; each zip is kept 90 days), or get it from someone who has. In your own fork, turn on Actions first (Actions tab) to build it there.
 2. Unzip it anywhere and run `ados.exe`. The app is not signed yet: on "Windows protected your PC", choose More info, then Run anyway.
@@ -139,10 +141,10 @@ Known issues on Windows, from reading the code (none seen yet, nothing confirmed
 - Stopping an agent started through `npx` may leave its `node` process running.
 - A start-up error shows nothing: the app has no console window.
 
-**Floating cards over web pages (when the Browser arrives).** A web page is a native window (Linux: an X11 child window; Windows: WebView2) that always draws on top of aDOs. When a floating card such as the assistant or a comment card opens over a page, aDOs cuts a card-shaped hole in the page window so the rest of the page stays visible and clicks in the hole reach the card. If the system cannot cut holes (an X server without the SHAPE extension; on Windows, if the window-region method fails on that PC), the page hides while the card is open and returns when it closes. Nothing is lost either way.
+**Floating cards over web pages.** A web page is a native window (Linux: an X11 child window; Windows: WebView2) that always draws on top of aDOs. When a floating card such as the assistant or a comment card opens over a page, aDOs cuts a card-shaped hole in the page window so the rest of the page stays visible and clicks in the hole reach the card. If the system cannot cut holes (an X server without the SHAPE extension; on Windows, if the window-region method fails on that PC), the page hides while the card is open and returns when it closes. Nothing is lost either way.
 
 Build it yourself on Windows: install Rust through rustup and the Visual Studio Build Tools (C++ workload, with the Windows SDK), then
-`cargo build -p ados --release --no-default-features --features notes,assistant,palette,calendar,sessions,tasks`.
+`cargo build -p ados --release`.
 The app is `target\release\ados.exe`. To run it on a PC without the Visual C++ Redistributable, build with `RUSTFLAGS=-C target-feature=+crt-static` as CI does.
 
 ## Agents (optional)

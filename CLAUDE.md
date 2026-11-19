@@ -18,12 +18,12 @@ A native Windows build of aDOs with every module (Windows 11 now, Windows 10 lat
 | Data folder (`ados-core/src/paths.rs`, default `~/.local/share/ados`) | Done: `%APPDATA%\ados` | `ADOS_HOME` still overrides |
 | One running copy (`ados/src/single.rs`) | Done: named pipe in `single_windows.rs` | |
 | Agents (`ados-agents`, started through `npx`) | Done: `.exe`/`.cmd` lookup in `launch.rs`; tried only against the fake agent | Kill the whole process tree on stop |
-| Agent tools connection (`ados-mcp`: Unix socket + per-launch secret) | No Unix socket by default | Named pipe (or AF_UNIX on recent Windows); keep the secret check |
-| Terminal (`ados-terminal`; `alacritty_terminal` 0.26 supports ConPTY; `pty.rs` uses Unix calls) | Needs a Windows path | ConPTY through alacritty_terminal's Windows side; default shell PowerShell |
-| Starting the engine (`ados-browser/src/engine.rs`, via `/usr/bin/setpriv`) | Linux only | Not needed with WebView2 |
-| **Showing the page** (`ados-browser/src/xembed.rs`, `runtime.rs`, `cutout.rs`, `shot.rs`: an X11 child window, x11rb) | Linux only | **WebView2** hosted as a child of the GPUI window (HWND), positioned to the Browser pane, hidden under overlays |
-| Keys while a page has focus (X11 key grabs) | Linux only | WebView2 accelerator-key events, so aDOs chords always win (focus contract F9) |
-| Page tools (read text, click, type, screenshot, link hints, comments; today over WebDriver/CDP) | Engine-specific | WebView2 `ExecuteScript`, DevTools protocol calls and `CapturePreview`; `hints.js` and `comment.js` are plain JS and should carry over |
+| Agent tools connection (`ados-mcp`: Unix socket + per-launch secret) | Done: AF_UNIX socket through `uds_windows`, secret from `BCryptGenRandom` | |
+| Terminal (`ados-terminal`; `alacritty_terminal` 0.26 ConPTY) | Done: `pwsh.exe` else `powershell.exe`; child-process check before close | |
+| Starting the engine (`ados-browser/src/engine.rs`, via `/usr/bin/setpriv`) | Not needed: `webview/engine.rs` | |
+| **Showing the page** (Linux: `xembed.rs`, `runtime.rs`, `cutout.rs`, `shot.rs`) | Done: `ados-browser/src/webview/runtime.rs`, one WebView2 controller per tab in a host child window; cards cut with `SetWindowRgn` | Seen on the CI runner only |
+| Keys while a page has focus (X11 key grabs) | Done: `AcceleratorKeyPressed`; browser accelerator keys off | Not tried by a person |
+| Page tools (read, click, type, screenshot, link hints, comments, followers) | Done over `ExecuteScript`, `Page.captureScreenshot` and `chrome.webview.postMessage` | Not tried by a person |
 
 The Browser keeps its GPUI chrome (tab strip, address bar, tiles, follower tabs); only the engine layer under it changes. Look for the seam between `ados-browser`'s panel code and its engine code before designing; prefer one small trait or cfg-split module over a parallel crate. Tabs = one WebView2 per tab or tile. Popups (`NewWindowRequested`) become tabs, as on Linux.
 
@@ -44,7 +44,7 @@ The Browser keeps its GPUI chrome (tab strip, address bar, tiles, follower tabs)
 ## Suggested order (each step leaves Linux building)
 1. Done. Make the workspace type-check for the Windows target with the Browser and Terminal compiled out there (cfg gates and a build feature), and add the Windows CI workflow. First green Windows build = first milestone.
 2. Done. Data folder, single-instance lock, agent program names.
-3. Agent tools connection over a named pipe.
-4. Terminal on ConPTY.
-5. Browser on WebView2: one page in the pane, then navigation and page reading, then tabs and tiles, then keys and the focus contract, then page tools.
+3. Done. Agent tools connection (AF_UNIX socket, not a named pipe: Windows 11 has AF_UNIX, and std-like sockets keep one code path).
+4. Done. Terminal on ConPTY.
+5. Done in code, every part; seen on the CI runner showing a page. Next: try each part by hand in a Windows VM (`~/VMs/win11`, outside the repo).
 6. Done: README section "Install on Windows" (WebView2 runtime ships with Windows 11; Windows 10 may need the Evergreen installer). Still to do: an installer and signing, last.

@@ -41,8 +41,8 @@ Say what works, with the exact commands you ran and what you saw; what does not;
 
 ## Windows port
 This repo also builds a native Windows 11 app from the same source. Plan and status: `docs/design/windows-port.md`. Where the rules above say otherwise, these win on Windows:
-- **Build:** the Terminal, Browser and MCP crates do not build on Windows yet, so leave them out: `cargo build -p ados --release --no-default-features --features notes,assistant,palette,calendar,sessions,tasks`.
-- **Tests:** one crate per cargo call (the `standalone` examples collide at link time), only the ported crates; see `.github/workflows/windows.yml`.
+- **Build:** `cargo build -p ados --release` (every module; the Browser's Windows engine is `crates/ados-browser/src/webview/`).
+- **Tests:** one crate per cargo call (the `standalone` examples collide at link time); see `.github/workflows/windows.yml`.
 - **GUI:** there is no Windows virtual-display rig. The only UI check is CI's start-up job and its `smoke-screenshots` artifact. Never write that something works on Windows from a Linux machine.
 - **Data:** default `%APPDATA%\ados`; for tests set `$env:ADOS_HOME` (PowerShell) to a folder under `target\test-home\`.
 - **`unsafe`:** allowed for Win32 calls in Windows-only files (such as `crates/ados/src/single_windows.rs`), each with a `SAFETY:` comment.

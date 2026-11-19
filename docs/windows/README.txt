@@ -27,19 +27,17 @@ front instead of opening a second one.
 
 What is in this build
 ---------------------
-In it: Notes (Ctrl+2), Sessions (Ctrl+6), Tasks (Ctrl+7), Calendar (Ctrl+8),
-the command palette (Ctrl+K), quick capture (Ctrl+Shift+K), the assistant
-(Alt+Space), layouts, Settings (Ctrl+Alt+,) and the shortcut editor (Ctrl+,).
-
-Not yet: the Terminal and the Browser show "Not in this build yet."
-Links open in your default web browser instead.
-Agents cannot use aDOs's own tools yet (the MCP connection).
+Every module: Notes (Ctrl+2), the Terminal (Ctrl+3, PowerShell), the Browser
+(Ctrl+4, Microsoft Edge WebView2), Sessions (Ctrl+6), Tasks (Ctrl+7), Calendar
+(Ctrl+8), the command palette (Ctrl+K), quick capture (Ctrl+Shift+K), the
+assistant (Alt+Space), layouts, Settings (Ctrl+Alt+,) and the shortcut editor
+(Ctrl+,). Agents started from aDOs can use aDOs's own tools (MCP).
 
 If a key does nothing: Alt+Space may be taken by PowerToys Run (use Ctrl+5),
 and Ctrl+Alt acts as AltGr on many keyboard layouts. Change any key with
 Ctrl+, (the shortcut editor).
 
-When the Browser arrives: web pages are drawn by Windows' own WebView2 in a
+Web pages are drawn by Windows' own WebView2 in a
 separate layer that always sits on top of aDOs. When a floating card (the
 assistant, a comment card) opens over a page, aDOs first tries to cut a
 card-shaped hole in the page so the rest of the page stays visible. If that
